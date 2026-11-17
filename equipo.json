@@ -1,0 +1,25 @@
+{
+  "_nota": "Sellers por segmento y su líder (lista entregada el 12-nov-2026). segmento: smb | mid_market | corporate | gobierno | sdr_ent. Correos verificados contra los usuarios de Amplemarket y los owners de HubSpot.",
+  "sellers": [
+    {"email": "aportillo@platzi.com",          "nombre": "Arturo Portillo",   "segmento": "corporate",  "equipo": "New Business",       "region": "MX",     "lider": "Alejandro Sisniega"},
+    {"email": "patriciasalgar@platzi.com",     "nombre": "Patricia Salgar",   "segmento": "corporate",  "equipo": "New Business",       "region": "Global", "lider": "Alejandro Sisniega"},
+    {"email": "andrea.jaramillo@platzi.com",   "nombre": "Andrea Jaramillo",  "segmento": "corporate",  "equipo": "New Business",       "region": "Global", "lider": "Alejandro Sisniega"},
+    {"email": "vicky.carroll@platzi.com",      "nombre": "Virginia Carroll",  "segmento": "corporate",  "equipo": "Account Management", "region": "MX",     "lider": "Alejandro Sisniega"},
+    {"email": "ofeliareyes@platzi.com",        "nombre": "Ofelia Reyes",      "segmento": "corporate",  "equipo": "Account Management", "region": "MX",     "lider": "Alejandro Sisniega"},
+    {"email": "baldovino@platzi.com",          "nombre": "Camilo Baldovino",  "segmento": "corporate",  "equipo": "Account Management", "region": "Global", "lider": "Alejandro Sisniega"},
+    {"email": "sbeltran@platzi.com",           "nombre": "Sthefanni Beltrán", "segmento": "mid_market","equipo": null,                 "region": null,     "lider": null},
+    {"email": "cindy@platzi.com",             "nombre": "Cindy Mejía",       "segmento": "mid_market", "equipo": "New Business",       "region": "Global", "lider": "Sthefanni Beltrán"},
+    {"email": "catalina.avendano@platzi.com",  "nombre": "Catalina Avendaño", "segmento": "mid_market", "equipo": "Account Management", "region": "Global", "lider": "Sthefanni Beltrán"},
+    {"email": "dnovoa@platzi.com",             "nombre": "Diego Novoa",       "segmento": "mid_market", "equipo": "Account Management", "region": "Global", "lider": "Sthefanni Beltrán"},
+    {"email": "andrescalle@platzi.com",        "nombre": "Andrés Calle",      "segmento": "mid_market", "equipo": "Account Management", "region": "Global", "lider": "Sthefanni Beltrán"},
+    {"email": "carlos.rubiano@platzi.com",     "nombre": "Carlos Rubiano",    "segmento": "sdr_ent",    "equipo": "SDR",                "region": null,     "lider": "Juan Sebastián Bautista"},
+    {"email": "natalia.castano@platzi.com",    "nombre": "Natalia Castaño",   "segmento": "sdr_ent",    "equipo": "SDR",                "region": null,     "lider": "Juan Sebastián Bautista"},
+    {"email": "fabrizzio@platzi.com",          "nombre": "Fabrizzio Castro",  "segmento": "smb",        "equipo": null,                 "region": null,     "lider": "David Zambrano"},
+    {"email": "jefferson.vargas@platzi.com",   "nombre": "Jefferson Vargas",  "segmento": "smb",        "equipo": null,                 "region": null,     "lider": "David Zambrano"},
+    {"email": "jduenas@platzi.com",            "nombre": "Juan Pablo Dueñas", "segmento": "smb",        "equipo": null,                 "region": null,     "lider": "David Zambrano"},
+    {"email": "juan.rojas@platzi.com",         "nombre": "Juan Camilo Rojas", "segmento": "smb",        "equipo": null,                 "region": null,     "lider": "David Zambrano"},
+    {"email": "michael.velasco@platzi.com",    "nombre": "Michael Velasco",   "segmento": "smb",        "equipo": null,                 "region": null,     "lider": "David Zambrano"},
+    {"email": "stephania.orozco@platzi.com",   "nombre": "Stephania Orozco",  "segmento": "smb",        "equipo": null,                 "region": null,     "lider": "David Zambrano"},
+    {"email": "cmonsalve@platzi.com",          "nombre": "Camila Monsalve",   "segmento": "smb",        "equipo": null,                 "region": null,     "lider": "David Zambrano"}
+  ]
+}

@@ -1,0 +1,14 @@
+datos/ultimo.json
+datos/snapshots/
+datos/historial.jsonl
+datos/chrome-perfil-amplemarket/
+publico/
+datos/.vercel-vinculo/
+# Supresión global (correos) y caché de MX: runtime con PII
+datos/supresion.json
+datos/cache_mx.json
+datos/enriquecimiento/
+datos/validaciones/
+datos/exclusion_amplemarket.json
+# La configuración de secuencias seguidas (datos/secuencias.json) sí se versiona: no trae PII
+!datos/secuencias.json

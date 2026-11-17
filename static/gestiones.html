@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Gestiones outbound</title>
+<!-- Plantilla de las vistas ejecutiva y operativa. Los datos los arma gestiones.py:
+     `gestiones.py vista` los incrusta abajo; servida por la app, los pide a /api/gestiones. -->
+<style>
+  :root{--bg:#121413;--sup:#1C1F1E;--sup2:#262A28;--borde:#3A403E;--txt:#E6ECEA;--txt2:#A3AEAB;--pri:#09E989;
+    --barra:#0FA968;--ok:#89E689;--aviso:#F9D894;--critico:#FEB4AB;--info:#A0BAEE}
+  @media (prefers-color-scheme:light){:root{--bg:#F6F8F7;--sup:#FFFFFF;--sup2:#EDF1EF;--borde:#CBD3D0;--txt:#151917;
+    --txt2:#55605C;--pri:#05854D;--barra:#0B8F58;--ok:#1B6E1B;--aviso:#7A5200;--critico:#B3261E;--info:#234A9C}}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--txt);font:14px/1.5 'Plus Jakarta Sans',system-ui,sans-serif}
+  main{max-width:1280px;margin:0 auto;padding:20px 16px 64px}
+  h1{font-size:22px;margin:0}h2{font-size:17px;margin:28px 0 10px}h3{font-size:14px;margin:0 0 8px}
+  .sub{color:var(--txt2);font-size:12.5px}.num{font-variant-numeric:tabular-nums}
+  header{display:flex;flex-wrap:wrap;gap:12px;align-items:end;justify-content:space-between}
+  .tabs{display:flex;gap:6px;margin:16px 0 4px}
+  button,select,input{font:inherit;color:inherit;background:var(--sup);border:1px solid var(--borde);border-radius:8px;padding:7px 10px}
+  button{cursor:pointer}.tab.on,.chip.on{background:var(--pri);color:#08130E;border-color:transparent;font-weight:600}
+  .grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(230px,1fr))}
+  .caja{background:var(--sup);border:1px solid var(--borde);border-radius:12px;padding:14px}
+  .kpi .v{font-size:26px;font-weight:700;line-height:1.2}
+  .ins{display:inline-flex;gap:5px;align-items:center;padding:1px 8px;border-radius:999px;border:1px solid var(--borde);font-size:12px;white-space:nowrap}
+  .ins.ok{color:var(--ok)}.ins.aviso{color:var(--aviso)}.ins.pausar,.ins.critico{color:var(--critico)}.ins.gris{color:var(--txt2)}.ins.info{color:var(--info)}
+  .fila-barra{display:grid;grid-template-columns:190px 1fr 150px;gap:10px;align-items:center;padding:5px 0}
+  .pista{height:14px;background:var(--sup2);border-radius:4px;overflow:hidden}.pista span{display:block;height:100%;background:var(--barra);border-radius:0 4px 4px 0}
+  .sd{color:var(--txt2);font-style:italic}
+  .tabla{overflow:auto;border:1px solid var(--borde);border-radius:12px;background:var(--sup)}
+  table{border-collapse:collapse;width:100%;font-size:13px}th,td{padding:7px 10px;text-align:left;border-bottom:1px solid var(--borde);vertical-align:top}
+  th{position:sticky;top:0;background:var(--sup2);font-weight:600;white-space:nowrap}td.n,th.n{text-align:right}
+  tbody tr.clic{cursor:pointer}tbody tr.clic:hover{background:var(--sup2)}
+  .filtros{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:10px 0}
+  .alerta{display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--borde)}.alerta:last-child{border:0}
+  a{color:var(--pri)}details{margin-top:10px}summary{cursor:pointer;color:var(--txt2)}
+  #detalle{position:fixed;inset:0 0 0 auto;width:min(520px,100%);background:var(--sup);border-left:1px solid var(--borde);padding:18px;overflow:auto;display:none;box-shadow:-12px 0 32px #0006}
+  #detalle.on{display:block}.linea{border-left:2px solid var(--borde);margin-left:6px;padding:2px 0 10px 12px}
+  .estado{padding:40px 16px;text-align:center;color:var(--txt2)}
+  @media (max-width:640px){.fila-barra{grid-template-columns:120px 1fr 96px}}
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <div><h1>Gestiones outbound · Platzi Business</h1><div class="sub" id="sello"></div></div>
+    <div style="display:flex;gap:10px;align-items:center"><span id="integra-resumen"></span>
+      <a id="volver" href="/" hidden>← Seguimiento de bases</a></div>
+  </header>
+  <div class="tabs">
+    <button class="tab on" data-vista="ejecutiva">Vista ejecutiva</button>
+    <button class="tab" data-vista="operativa">Vista operativa</button>
+  </div>
+  <div id="vista"><div class="estado">Cargando gestiones…</div></div>
+</main>
+<aside id="detalle"></aside>
+<script>
+let G = /*GESTIONES*/null;
+const $ = s => document.querySelector(s);
+const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const nf = new Intl.NumberFormat('es-CO');
+const num = v => v == null ? '<span class="sd">sin datos</span>' : nf.format(v);
+const pct = v => v == null ? '<span class="sd">sin datos</span>' : (v * 100).toFixed(1).replace('.', ',') + ' %';
+const fecha = v => v ? new Date(v.length === 10 ? v + 'T12:00:00' : v).toLocaleDateString('es-CO', {day: '2-digit', month: 'short'}) : '—';
+const fechaHora = v => v ? new Date(v).toLocaleString('es-CO', {dateStyle: 'medium', timeStyle: 'short'}) : 'sin datos';
+const TEC = {sin_enviar:'Sin enviar',en_curso:'En curso',terminado:'Terminó',retirado:'Retirado',pausado:'Pausado',
+  pausa_ausencia:'Pausa por ausencia',rebote_duro:'Rebote duro',bloqueo_politica:'Bloqueado por política',
+  sin_email_valido:'Sin email válido',error:'Error',fallo_temporal:'Fallo temporal',baja:'Baja'};
+const TEC_NIVEL = {rebote_duro:'critico',bloqueo_politica:'critico',sin_email_valido:'critico',error:'critico',
+  fallo_temporal:'aviso',baja:'aviso',sin_enviar:'gris',en_curso:'info',terminado:'gris',retirado:'gris',pausado:'aviso',pausa_ausencia:'aviso'};
+const COM = {sin_contactar:'Sin contactar',contactado:'Contactado',respondio:'Respondió',cita:'Cita agendada',deal:'Deal nuevo'};
+const COLA = {pendiente:'Pendientes',vencida:'Vencidas (sin lanzar)',fallida:'Fallidas',bloqueada:'Bloqueadas',
+  por_gestionar:'Respondió, sin avance',sin_registro:'Sin registro en HubSpot'};
+const NIVEL = {ok:['✓','Sana'],aviso:['▲','Aviso'],pausar:['■','Pausar'],sin_muestra:['–','Muestra insuficiente']};
+const INT = {ok:['✓','Al día','ok'],desactualizado:['▲','Desactualizada','aviso'],sin_datos:['–','Sin datos','gris'],no_conectado:['✕','No conectada','gris']};
+const insignia = (cls, icono, texto) => `<span class="ins ${cls}"><span aria-hidden="true">${icono}</span>${esc(texto)}</span>`;
+const nivelHtml = n => insignia(n === 'sin_muestra' ? 'gris' : n, NIVEL[n][0], NIVEL[n][1]);
+const F = {corte:'secuencia', q:'', responsable:'', secuencia:'', segmento:'', tecnico:'', comercial:'', cola:'', desde:'', hasta:'', pagina:0};
+let vista = 'ejecutiva';
+
+async function iniciar() {
+  if (location.protocol !== 'file:') $('#volver').hidden = false;
+  try {
+    if (!G) {
+      const local = ['127.0.0.1', 'localhost'].includes(location.hostname);
+      const r = await fetch(local ? '/api/gestiones' : '/gestiones.json', {cache: 'no-store'});
+      if (!r.ok) throw new Error(`La app respondió ${r.status}`);
+      G = await r.json();
+    }
+  } catch (e) {
+    $('#vista').innerHTML = `<div class="estado"><b>No se pudieron cargar las gestiones.</b><br>${esc(e.message)}.<br>
+      Genera la vista con <code>.venv/bin/python gestiones.py vista</code>.</div>`;
+    return;
+  }
+  if (!G.filas.length) { $('#vista').innerHTML = '<div class="estado">Todavía no hay inscripciones sincronizadas.</div>'; return; }
+  const peor = G.integraciones.filter(i => i.estado === 'desactualizado').length;
+  $('#sello').innerHTML = `Última sincronización: <b>${fechaHora(G.generado)}</b> · datos del ${fecha(G.ventana.desde)} al ${fecha(G.ventana.hasta)} (${G.ventana.dias} días de historia)`;
+  $('#integra-resumen').innerHTML = peor ? insignia('aviso', '▲', 'Datos desactualizados') : insignia('ok', '✓', 'Sincronización al día');
+  document.querySelectorAll('.tab').forEach(b => b.onclick = () => {
+    vista = b.dataset.vista; document.querySelectorAll('.tab').forEach(x => x.classList.toggle('on', x === b)); pintar();
+  });
+  pintar();
+}
+const pintar = () => vista === 'ejecutiva' ? ejecutiva() : operativa();
+
+// ── Vista ejecutiva ──────────────────────────────────────────────────────────
+function embudoHtml(pasos) {
+  const lista = Object.values(pasos), base = lista[0].n || 1;
+  return lista.map(p => p.n == null
+    ? `<div class="fila-barra" title="${esc(p.como_instrumentar)}"><span>${esc(p.etiqueta)}</span><span class="sd">sin datos · ${esc(p.como_instrumentar)}</span><span></span></div>`
+    : `<div class="fila-barra" title="${esc(p.etiqueta)}: ${nf.format(p.n)} de ${nf.format(base)}"><span>${esc(p.etiqueta)}${p.nota ? `<div class="sub">${esc(p.nota)}</div>` : ''}</span>
+        <div class="pista"><span style="width:${100 * p.n / base}%"></span></div>
+        <span class="num"><b>${nf.format(p.n)}</b> <span class="sub">${(100 * p.n / base).toFixed(1).replace('.', ',')} %</span></span></div>`).join('');
+}
+function tendenciaHtml() {
+  const t = G.tendencia;
+  if (t.length < 2) return '<p class="sd">Hace falta más de un día de historial.</p>';
+  return `<div class="tabla"><table><thead><tr><th>Cierre del día</th><th class="n">Inscritos</th><th class="n">Contactados</th>
+    <th class="n">Rebotes duros</th><th class="n">Bloqueos</th><th class="n">Respondieron</th><th class="n">Rebote duro / contactados</th><th></th></tr></thead><tbody>${
+    t.map(d => `<tr><td>${fecha(d.dia + 'T12:00:00')}</td><td class="n num">${num(d.inscritos)}</td><td class="n num">${num(d.contactados)}</td>
+      <td class="n num">${num(d.rebote_duro)}</td><td class="n num">${num(d.bloqueo_politica)}</td><td class="n num">${num(d.respondieron)}</td>
+      <td class="n num">${pct(d.tasa_rebote_duro)}</td>
+      <td style="width:160px"><div class="pista" title="${d.rebote_duro} de ${d.contactados}"><span style="width:${Math.min(100, (d.tasa_rebote_duro || 0) * 1000)}%"></span></div></td></tr>`).join('')
+    }</tbody></table></div><p class="sub">Acumulado al cierre de cada día con sincronización. La barra llega al tope en 10 %.</p>`;
+}
+function corteHtml() {
+  const NOMBRES = {secuencia:'Secuencia',responsable:'Responsable',segmento:'Segmento',semana:'Semana de la base',
+    semana_contacto:'Cohorte (semana del primer contacto)',dominio_buzon:'Dominio remitente',proveedor:'Proveedor receptor',verificacion:'Verificación del correo'};
+  return `<div class="filtros">${Object.entries(NOMBRES).map(([k, l]) =>
+      `<button class="chip ${F.corte === k ? 'on' : ''}" data-corte="${k}">${l}</button>`).join('')}</div>
+    <div class="tabla"><table><thead><tr><th>${NOMBRES[F.corte]}</th><th>Salud</th><th class="n">Inscritos</th><th class="n">Sin enviar</th>
+      <th class="n">Contactados</th><th class="n">Sin verificar</th><th class="n">Rebote duro</th><th class="n">Bloqueo</th>
+      <th class="n">Respondieron</th><th class="n">Cita</th></tr></thead><tbody>${
+    G.cortes[F.corte].map(c => `<tr><td>${esc(c.nombre)}</td><td>${nivelHtml(c.nivel)}</td><td class="n num">${num(c.inscritos)}</td>
+      <td class="n num">${num(c.sin_enviar)}</td><td class="n num">${num(c.contactados)}</td><td class="n num">${num(c.sin_verificar)}</td>
+      <td class="n num">${num(c.rebote_duro)} · ${pct(c.tasa_rebote_duro)}</td><td class="n num">${num(c.bloqueo_politica)} · ${pct(c.tasa_bloqueo_politica)}</td>
+      <td class="n num">${num(c.respondieron)} · ${pct(c.tasa_respuesta)}</td><td class="n num">${num(c.cita_agendada)}</td></tr>`).join('')
+    }</tbody></table></div>`;
+}
+const alertasHtml = lista => lista.map(a => `<div class="alerta">${insignia(a.nivel, NIVEL[a.nivel][0], NIVEL[a.nivel][1])}
+  <div><b>${esc(a.ambito)} · ${esc(a.nombre)}</b><div class="sub">${esc(a.texto)}</div></div></div>`).join('');
+function ejecutiva() {
+  const e = G.embudo, u = G.umbrales.valores;
+  const dinero = o => Object.keys(o).length ? Object.entries(o).filter(([, v]) => v).map(([m, v]) => `${nf.format(v)} ${esc(m)}`).join(' · ') || '0' : '0';
+  $('#vista').innerHTML = `
+    <h2>Estado de las integraciones</h2>
+    <div class="grid">${G.integraciones.map(i => `<div class="caja"><h3>${esc(i.nombre)}</h3>${insignia(INT[i.estado][2], INT[i.estado][0], INT[i.estado][1])}
+      <div class="sub">${esc(i.que)}</div><div class="sub">Última lectura: ${fechaHora(i.ultima)}</div>${i.nota ? `<div class="sub">${esc(i.nota)}</div>` : ''}</div>`).join('')}</div>
+
+    <h2>Salud de envío y alertas <span class="sub">${G.alertas.length} activas</span></h2>
+    <div class="caja">${G.alertas.length ? alertasHtml(G.alertas.slice(0, 8)) + (G.alertas.length > 8
+        ? `<details><summary>Ver las ${G.alertas.length - 8} restantes</summary>${alertasHtml(G.alertas.slice(8))}</details>` : '')
+      : '<span class="sd">Sin alertas con la muestra actual.</span>'}
+      <p class="sub">Umbrales (hipótesis ajustables, no requisitos de proveedores): rebote duro aviso ${u.rebote_duro[0] * 100} % / pausa ${u.rebote_duro[1] * 100} %;
+      bloqueo por política aviso ${u.bloqueo_politica[0] * 100} % / pausa ${u.bloqueo_politica[1] * 100} %; muestra mínima ${G.umbrales.muestra_minima} contactados.
+      «Pausar» es una recomendación: esta app no pausa secuencias en Amplemarket.</p></div>
+
+    <div class="grid" style="margin-top:12px">
+      <div class="caja kpi"><div class="sub">Pipeline de deals nuevos</div><div class="v num">${dinero(e.pipeline)}</div><div class="sub">${num(e.cuentas.deal.n)} deals creados desde el lunes de su base</div></div>
+      <div class="caja kpi"><div class="sub">Ingresos ganados</div><div class="v num">${dinero(e.ingresos_ganados)}</div><div class="sub">${num(e.cuentas.ganado.n)} negocios ganados</div></div>
+      <div class="caja kpi"><div class="sub">Quejas de spam</div><div class="v sd">sin datos</div><div class="sub">${esc(G.quejas_spam.como_instrumentar)}</div></div>
+      <div class="caja kpi"><div class="sub">Bajas</div><div class="v num">${num(G.bajas.valor)}</div><div class="sub">${esc(G.bajas.nota)}</div></div>
+      <div class="caja kpi"><div class="sub">Costo por resultado</div><div class="v sd">sin datos</div><div class="sub">${esc(G.costos.como_instrumentar)}</div></div>
+    </div>
+
+    <h2>Embudo por contacto <span class="sub">una fila por inscripción; % sobre inscritos</span></h2>
+    <div class="caja">${embudoHtml(e.contactos)}</div>
+    <h2>Embudo por cuenta <span class="sub">HubSpot + Amplemarket; % sobre cuentas en bases</span></h2>
+    <div class="caja">${embudoHtml(e.cuentas)}</div>
+
+    <h2>Tendencia</h2>${tendenciaHtml()}
+    <h2>Desempeño por corte</h2>${corteHtml()}
+
+    <details><summary>Cómo se calcula cada métrica</summary><div class="tabla"><table><thead><tr><th>Métrica</th><th>Numerador</th><th>Denominador</th><th>Ventana</th><th>Límite</th></tr></thead>
+      <tbody>${G.definiciones.map(d => `<tr><td><b>${esc(d.metrica)}</b></td><td>${esc(d.numerador)}</td><td>${esc(d.denominador)}</td><td>${esc(d.ventana)}</td><td>${esc(d.limite || '')}</td></tr>`).join('')}</tbody></table></div></details>`;
+  document.querySelectorAll('[data-corte]').forEach(b => b.onclick = () => { F.corte = b.dataset.corte; const y = scrollY; ejecutiva(); scrollTo(0, y); });
+}
+
+// ── Vista operativa ──────────────────────────────────────────────────────────
+function filtradas() {
+  const q = F.q.trim().toLowerCase();
+  return G.filas.filter(f =>
+    (!F.responsable || f.responsable === F.responsable) && (!F.secuencia || f.secuencia === F.secuencia) &&
+    (!F.segmento || f.segmento === F.segmento) && (!F.tecnico || f.tecnico === F.tecnico) &&
+    (!F.comercial || f.comercial === F.comercial) && (!F.cola || f.cola === F.cola) &&
+    (!F.desde || (f.primer_contacto || '') >= F.desde) && (!F.hasta || (f.primer_contacto || '').slice(0, 10) <= F.hasta && f.primer_contacto) &&
+    (!q || [f.nombre, f.email, f.empresa, f.cargo].some(v => (v || '').toLowerCase().includes(q))));
+}
+function operativa() {
+  const unicos = k => [...new Set(G.filas.map(f => f[k]).filter(Boolean))].sort();
+  const sel = (k, vacio, opciones, txt = x => x) => `<select data-f="${k}"><option value="">${vacio}</option>${opciones.map(o =>
+    `<option value="${esc(o)}" ${F[k] === o ? 'selected' : ''}>${esc(txt(o))}</option>`).join('')}</select>`;
+  $('#vista').innerHTML = `
+    <h2>Cola de gestiones</h2>
+    <div class="filtros"><button class="chip ${!F.cola ? 'on' : ''}" data-cola="">Todas las inscripciones <b class="num">${nf.format(G.filas.length)}</b></button>
+      ${Object.entries(COLA).map(([k, l]) => `<button class="chip ${F.cola === k ? 'on' : ''}" data-cola="${k}">${l} <b class="num">${nf.format(G.colas[k] || 0)}</b></button>`).join('')}</div>
+    <div class="filtros">
+      <input type="search" data-f="q" placeholder="Buscar contacto, correo o empresa" value="${esc(F.q)}" style="min-width:240px">
+      ${sel('responsable', 'Todos los responsables', unicos('responsable'))}${sel('secuencia', 'Todas las secuencias', unicos('secuencia'))}
+      ${sel('segmento', 'Todos los segmentos', unicos('segmento'))}${sel('tecnico', 'Estado del envío', unicos('tecnico'), x => TEC[x] || x)}
+      ${sel('comercial', 'Estado comercial', unicos('comercial'), x => COM[x] || x)}
+      <label class="sub">Primer contacto desde <input type="date" data-f="desde" value="${F.desde}"></label>
+      <label class="sub">hasta <input type="date" data-f="hasta" value="${F.hasta}"></label>
+    </div><div id="tabla-op"></div>`;
+  document.querySelectorAll('[data-cola]').forEach(b => b.onclick = () => { F.cola = b.dataset.cola; F.pagina = 0; operativa(); });
+  document.querySelectorAll('[data-f]').forEach(c => c.oninput = () => { F[c.dataset.f] = c.value; F.pagina = 0; tablaOperativa(); });
+  tablaOperativa();
+}
+function tablaOperativa() {
+  const filas = filtradas(), POR = 100, total = Math.ceil(filas.length / POR), pag = filas.slice(F.pagina * POR, (F.pagina + 1) * POR);
+  $('#tabla-op').innerHTML = !filas.length ? '<div class="estado">Ninguna inscripción cumple estos filtros.</div>' : `
+    <p class="sub">${nf.format(filas.length)} inscripciones · página ${F.pagina + 1} de ${total}
+      ${F.pagina ? '<button data-pag="-1">Anterior</button>' : ''} ${F.pagina < total - 1 ? '<button data-pag="1">Siguiente</button>' : ''}</p>
+    <div class="tabla"><table><thead><tr><th>Contacto</th><th>Empresa</th><th>Responsable</th><th>Secuencia · paso</th><th>Envío</th><th>Comercial</th>
+      <th>Último contacto</th><th>Próxima acción</th></tr></thead><tbody>${pag.map(f => `<tr class="clic" data-id="${esc(f.id)}">
+      <td><b>${esc(f.nombre || '(sin nombre)')}</b><div class="sub">${esc(f.email || 'sin correo')}</div></td><td>${esc(f.empresa)}</td><td>${esc(f.responsable)}</td>
+      <td>${esc(f.secuencia)}<div class="sub">${esc(f.paso || 'sin paso activo')}</div></td>
+      <td>${insignia(TEC_NIVEL[f.tecnico] || 'gris', '●', TEC[f.tecnico] || f.tecnico)}</td><td>${esc(COM[f.comercial])}</td>
+      <td class="num">${fecha(f.ultimo_toque)}</td><td>${esc(f.accion || '—')}</td></tr>`).join('')}</tbody></table></div>`;
+  document.querySelectorAll('[data-pag]').forEach(b => b.onclick = () => { F.pagina += +b.dataset.pag; tablaOperativa(); });
+  document.querySelectorAll('tr[data-id]').forEach(tr => tr.onclick = () => detalle(tr.dataset.id));
+}
+function detalle(id) {
+  const f = G.filas.find(x => x.id === id), c = G.cuentas[f.cuenta] || {actividades: [], alertas: [], deals: []};
+  const enlace = (u, t) => u ? `<a href="${esc(u)}" target="_blank" rel="noopener">${t}</a>` : `<span class="sd">${t}: sin enlace</span>`;
+  const hitos = [
+    f.inicio_base && {fecha: f.inicio_base + 'T00:00:00', txt: `Inicio de la base ${f.semana}`},
+    f.primer_contacto && {fecha: f.primer_contacto, txt: 'Primer contacto de la secuencia (Amplemarket)'},
+    ...c.actividades.map(a => ({fecha: a.fecha, txt: `${a.respuesta ? '← ' : a.saliente ? '→ ' : ''}${a.tipo}: ${a.titulo || ''}`, sub: [a.detalle, a.owner].filter(Boolean).join(' · ')})),
+  ].filter(Boolean).sort((a, b) => a.fecha < b.fecha ? -1 : 1);
+  $('#detalle').innerHTML = `<button id="cerrar" style="float:right">Cerrar</button>
+    <h2 style="margin-top:0">${esc(f.nombre || '(sin nombre)')}</h2>
+    <div class="sub">${esc(f.cargo || '')} · ${esc(f.empresa)} · ${esc(f.email || 'sin correo')}</div>
+    <p>${insignia(TEC_NIVEL[f.tecnico] || 'gris', '●', 'Envío: ' + (TEC[f.tecnico] || f.tecnico))} ${insignia('info', '●', 'Comercial: ' + COM[f.comercial])}
+       ${insignia('gris', '●', 'HubSpot: ' + (f.hs_nivel || 'sin datos'))}</p>
+    ${f.clase_fallo ? `<div class="caja"><h3>Detalle del error · ${esc(f.clase_fallo)}</h3><div>${esc(f.motivo)}</div></div>` : f.motivo ? `<p class="sub">Motivo de salida o pausa: ${esc(f.motivo)}</p>` : ''}
+    <div class="caja" style="margin-top:10px"><h3>Acción recomendada</h3>${esc(f.accion || 'Ninguna: sigue su curso.')}
+      <div class="sub">Fecha de la próxima acción: sin datos (${esc(G.sin_datos.proxima_fecha)})</div></div>
+    <p class="sub">Responsable ${esc(f.responsable)} · ${esc(f.secuencia)} · paso ${esc(f.paso || 'sin paso activo')}<br>
+      Buzón remitente ${esc(f.buzon || 'sin datos')} · verificación ${esc(f.verificacion)} · proveedor receptor ${esc(f.proveedor || 'sin datos')} · aperturas reportadas ${f.aperturas}<br>
+      Id de inscripción <code>${esc(f.id)}</code></p>
+    <p>${enlace(f.url_secuencia, 'Secuencia en Amplemarket')} · ${enlace(f.url_contacto, 'Contacto en HubSpot')} · ${enlace(f.url_empresa, 'Empresa en HubSpot')}
+       ${f.linkedin ? ' · ' + enlace(f.linkedin, 'LinkedIn') : ''}</p>
+    ${c.alertas.length ? `<h3>Alertas de la cuenta</h3><ul>${c.alertas.map(a => `<li>${esc(a)}</li>`).join('')}</ul>` : ''}
+    <h3>Línea de tiempo de la cuenta</h3>
+    <p class="sub">HubSpot asocia las actividades a la cuenta: pueden ser de otro contacto de la misma empresa. Los correos automáticos de Amplemarket solo aparecen si HubSpot los registró.</p>
+    ${hitos.map(h => `<div class="linea"><b class="num">${fecha(h.fecha)}</b> ${esc(h.txt)}${h.sub ? `<div class="sub">${esc(h.sub)}</div>` : ''}</div>`).join('') || '<span class="sd">Sin actividad registrada.</span>'}`;
+  $('#detalle').classList.add('on');
+  $('#cerrar').onclick = () => $('#detalle').classList.remove('on');
+}
+iniciar();
+</script>
+</body>
+</html>

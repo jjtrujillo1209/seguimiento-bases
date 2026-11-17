@@ -1,0 +1,1397 @@
+<!doctype html>
+<html lang="es" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Follow up outbound</title>
+<link rel="stylesheet" href="/static/platzi-tokens.css">
+<script>
+  // Sinapsis es oscuro primero; el modo claro solo si la persona lo elige (se recuerda en este navegador)
+  try { if (localStorage.getItem('fuo-tema') === 'light') document.documentElement.dataset.theme = 'light'; } catch (e) {}
+</script>
+<style>
+  /* Follow up outbound · Platzi Sinapsis v1.1 (oscuro primero). Tokens en /static/platzi-tokens.css;
+     componentes según el design system: Button, Chip, Tabs, DataTable, Tag, Card, SidePanel, Embudo. */
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--surface);color:var(--on-surface);font-family:var(--font-body);font-size:14px;line-height:24px;letter-spacing:.15px;-webkit-font-smoothing:antialiased}
+  button,input,select{font:inherit;color:inherit}
+  :focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+  ::selection{background:color-mix(in srgb,var(--primary) 30%,transparent)}
+  .wrap{max-width:1320px;margin:0 auto;padding:0 24px 80px}
+  .ms{font-family:'Material Symbols Rounded';font-size:20px;line-height:1;font-weight:400;font-variation-settings:'FILL' 0,'wght' 400;user-select:none;flex-shrink:0}
+
+  /* estados de la empresa y etapas del contacto: roles semánticos de Sinapsis (nunca add-on en producto) */
+  :root{
+    --e-no_en_hubspot:var(--outline);
+    --e-sin_tocar:var(--error);
+    --e-contactada:var(--info);
+    --e-respondio:var(--warning);
+    --e-reunion:var(--organizer);
+    --e-deal:var(--primary);
+    --n-no_en_hubspot:var(--error);
+    --n-contacto:var(--outline);
+    --n-prospecto:var(--info);
+    --n-lead:var(--warning);
+    --n-deal:var(--primary);
+    --n-actividad:var(--info);
+    --n-brecha:var(--error);
+  }
+
+  /* encabezado */
+  header{border-bottom:1px solid var(--outline-variant);background:var(--surface);position:sticky;top:0;z-index:5}
+  header .wrap{display:flex;align-items:center;gap:16px;padding-top:16px;padding-bottom:16px;flex-wrap:wrap}
+  .marca{display:flex;align-items:center;gap:16px}
+  .marca svg{height:22px;width:auto;color:var(--on-surface)}
+  .marca svg .cls-1{fill:currentColor}
+  .marca svg .cls-2{fill:var(--primary)}
+  .marca .sep{width:1px;height:32px;background:var(--outline-variant)}
+  h1{font-family:var(--font-display);font-weight:700;font-size:24px;line-height:32px;letter-spacing:-.2px;margin:0}
+  .sub{color:var(--on-surface-variant);font-size:12px;line-height:16px;letter-spacing:.4px}
+  .grow{flex:1}
+  .progreso{font-size:12px;line-height:16px;color:var(--on-surface-variant);font-family:var(--font-mono)}
+
+  /* Button · pastilla 36px; primary físico (sube 1px, se asienta 2px); outlined y plain con capa de estado */
+  .btn{height:36px;padding:0 16px;border-radius:var(--radius-full);display:inline-flex;align-items:center;justify-content:center;gap:8px;
+       font-size:14px;line-height:20px;letter-spacing:.1px;font-weight:600;white-space:nowrap;cursor:pointer;user-select:none;
+       background:transparent;color:var(--on-surface);border:1px solid var(--outline);
+       transition:background-color 180ms ease,filter 180ms ease,transform 180ms cubic-bezier(.16,1,.3,1)}
+  .btn:hover:not(:disabled){background:var(--state-hover)}
+  .btn:active:not(:disabled){background:var(--state-pressed)}
+  .btn.prim{background:var(--primary);color:var(--on-primary);border-color:transparent}
+  .btn.prim:hover:not(:disabled){background:var(--primary);filter:brightness(1.08);transform:translateY(-1px)}
+  .btn.prim:active:not(:disabled){transform:translateY(2px);filter:brightness(.92)}
+  .btn.icono{width:36px;padding:0;border-color:transparent}
+  .btn:disabled{opacity:.38;cursor:not-allowed}
+  .error{background:var(--error-container);color:var(--on-error-container);padding:12px 16px;border-radius:var(--radius-xl);margin-top:16px}
+
+  /* filtros */
+  .filtros{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin:20px 0 4px}
+  .etq{font-size:12px;line-height:16px;letter-spacing:.3px;font-weight:600;color:var(--on-surface-variant);min-width:72px}
+  .chips{display:flex;gap:8px;flex-wrap:wrap}
+  /* Chip filter · 32px, borde outline; seleccionado = secondary-container con ✓ */
+  .chip{height:32px;padding:0 12px;border:1px solid var(--outline);border-radius:var(--radius-full);background:transparent;
+        color:var(--on-surface-variant);display:inline-flex;align-items:center;gap:8px;cursor:pointer;white-space:nowrap;
+        font-size:12px;line-height:16px;letter-spacing:.3px;font-weight:600;transition:background-color 140ms ease,color 140ms ease}
+  .chip:hover{background:var(--state-hover);color:var(--on-surface)}
+  .chip:active{background:var(--state-pressed)}
+  .chip.on{background:var(--secondary-container);color:var(--on-secondary-container);border-color:transparent}
+  .chip .ms{font-size:18px}
+  .chip .n{font-family:var(--font-mono);font-weight:500;opacity:.8}
+  /* campos · radio xl (12px), variante soft */
+  select,input[type=search]{height:40px;border:1px solid var(--outline-variant);background:var(--surf-cont);color:var(--on-surface);
+        border-radius:var(--radius-xl);padding:0 12px;font-size:14px;transition:border-color 140ms ease,background-color 140ms ease}
+  select:hover,input[type=search]:hover{background:var(--surf-cont-high);border-color:var(--outline)}
+  select:focus,input[type=search]:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px color-mix(in srgb,var(--primary) 13%,transparent)}
+  input[type=search]{min-width:240px}
+  label.tog{display:inline-flex;gap:8px;align-items:center;font-size:14px;cursor:pointer}
+  label.tog input{width:18px;height:18px;accent-color:var(--primary)}
+
+  /* Tabs · 48px, label-lg, seleccionado en primario con indicador de 2px */
+  .tabs{display:flex;gap:4px;margin:24px 0 8px;border-bottom:1px solid var(--outline-variant);overflow-x:auto}
+  .tab{height:48px;padding:0 16px;border:0;border-radius:6px 6px 0 0;background:transparent;cursor:pointer;position:relative;
+       display:inline-flex;align-items:center;gap:8px;white-space:nowrap;font-size:14px;line-height:20px;letter-spacing:.1px;font-weight:600;
+       color:var(--on-surface-variant);transition:color 140ms ease,background-color 140ms ease}
+  .tab:hover{color:var(--on-surface);background:var(--state-hover)}
+  .tab:active{background:var(--state-pressed)}
+  .tab:focus-visible{outline-offset:-2px}
+  .tab.on{color:var(--primary)}
+  .tab.on::after{content:'';position:absolute;left:0;right:0;bottom:0;height:2px;border-radius:var(--radius-full);background:var(--primary)}
+
+  /* títulos de sección · title-lg */
+  h2{font-family:var(--font-display);font-size:20px;line-height:28px;font-weight:600;margin:32px 0 12px}
+  h2 .sub{font-family:var(--font-body);font-weight:400;margin-left:8px}
+
+  /* Card elevated (KPIs, tarjetas de segmento, gráficas) */
+  .card{background:var(--surf-cont-low);border-radius:var(--radius-3xl);padding:24px;position:relative;
+        box-shadow:0 1px 2px 0 color-mix(in srgb,var(--shadow) 30%,transparent),0 1px 3px 1px color-mix(in srgb,var(--shadow) 15%,transparent)}
+  .clic{cursor:pointer}
+  .clic::after{content:'';position:absolute;inset:0;border-radius:inherit;background:var(--on-surface);opacity:0;transition:opacity 140ms ease;pointer-events:none}
+  .clic:hover::after{opacity:.08}
+  .clic:active::after{opacity:.16}
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:16px;margin-top:12px}
+  .kpi{background:var(--surf-cont-low);border-radius:var(--radius-3xl);padding:20px 24px;display:flex;flex-direction:column;gap:4px;position:relative;
+       box-shadow:0 1px 2px 0 color-mix(in srgb,var(--shadow) 30%,transparent),0 1px 3px 1px color-mix(in srgb,var(--shadow) 15%,transparent)}
+  .kpi .ico{color:var(--primary);font-size:24px}
+  .kpi .v{font-family:var(--font-display);font-size:32px;line-height:40px;letter-spacing:-.4px;font-weight:700}
+  .kpi .l{font-size:12px;line-height:16px;letter-spacing:.4px;color:var(--on-surface-variant)}
+  .kpi .p{font-size:12px;line-height:16px;color:var(--on-surface-variant);font-family:var(--font-mono)}
+  .kpi.clic{cursor:pointer}
+  .kpi .dot,.dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:1px}
+  .etapas{display:flex;flex-wrap:wrap;gap:4px}
+  .etapa{font-size:12px;line-height:16px;padding:2px 8px;border-radius:var(--radius-sm);background:var(--surf-cont-high);color:var(--on-surface-variant);white-space:nowrap}
+  .etapa b{font-family:var(--font-mono);margin-left:4px;color:var(--on-surface)}
+  details.rep{border-bottom:1px solid var(--outline-variant)}
+  details.rep summary{cursor:pointer;padding:12px 0;display:grid;grid-template-columns:minmax(140px,200px) 56px 1fr;gap:12px;align-items:center;list-style:none}
+  details.rep summary::-webkit-details-marker{display:none}
+  details.rep[open] summary{font-weight:600}
+  .seccion{background:var(--surf-cont-low);border-radius:var(--radius-3xl);padding:8px 20px 12px;margin-top:16px}
+  .seccion h5{font-family:var(--font-display);font-size:16px;line-height:24px;font-weight:600;margin:12px 0 2px}
+
+  /* DataTable · contenedor surface-container-low, franja de cabecera, sentence case */
+  .scroll{overflow:auto;background:var(--surf-cont-low);border:1px solid var(--outline-variant);border-radius:var(--radius-lg);max-height:72vh;
+          scrollbar-width:thin;scrollbar-color:var(--outline) transparent}
+  .tabla{width:100%;border-collapse:collapse}
+  .tabla th{text-align:left;font-size:12px;line-height:16px;letter-spacing:.3px;font-weight:400;color:var(--on-surface-variant);
+            padding:12px 16px;border-bottom:1px solid var(--outline-variant);white-space:nowrap;cursor:pointer;user-select:none;
+            position:sticky;top:0;background:var(--surf-cont);z-index:1}
+  .tabla th:hover{color:var(--on-surface)}
+  .tabla td{padding:12px 16px;border-bottom:1px solid var(--outline-variant);vertical-align:middle;font-size:14px;line-height:24px}
+  .tabla tbody tr:last-child td{border-bottom:none}
+  .tabla tr.fila{cursor:pointer;transition:background-color 120ms ease}
+  .tabla tr.fila:hover td{background:var(--state-hover)}
+  .tabla tr.sel td{background:var(--state-focus)}
+  .tabla tr.grupo td{background:var(--surf-cont-high);font-family:var(--font-display);font-weight:600;font-size:14px;line-height:20px;padding:8px 16px}
+  .tabla tr.sub-grupo td{background:var(--surf-cont);padding:8px 16px}
+  .tabla td:first-child{min-width:190px}
+  /* Secuencias: detalle del progreso por etapa al abrir una fila */
+  .sec-flecha{font-size:18px;vertical-align:-4px;margin:0 4px 0 -6px;color:var(--on-surface-variant)}
+  .tabla tr.sec-detalle>td{background:var(--surf-cont);padding:16px 16px 16px 36px}
+  .etapas-caja{display:inline-block;max-width:100%;overflow:auto;background:var(--surf-cont-low);border:1px solid var(--outline-variant);border-radius:var(--radius-md)}
+  .tabla.sec-etapas{width:auto}
+  .tabla.sec-etapas th{position:static;cursor:default;background:transparent}
+  .tabla.sec-etapas td{padding:8px 16px}
+  .tabla.sec-etapas td:first-child{min-width:0}
+  .sec-activa{display:flex;align-items:center;gap:6px;font-size:13px;line-height:20px;min-width:220px;max-width:280px;overflow-wrap:anywhere}
+  .sec-activa .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+  .etapa-tipo{display:inline-flex;align-items:center;gap:8px}
+  .etapa-tipo .ms{font-size:18px;color:var(--primary)}
+  .num,.tabla th.num{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .muted{color:var(--on-surface-variant)}
+  .mono{font-family:var(--font-mono);font-size:12px}
+  .nombre{font-weight:600}
+  .dom{font-size:12px;line-height:16px;letter-spacing:.4px;color:var(--on-surface-variant)}
+  .small{font-size:12px;line-height:16px}
+
+  /* barra de distribución: segmentos separados por 2px de superficie */
+  .barra{display:flex;gap:2px;height:8px;border-radius:var(--radius-full);overflow:hidden;min-width:160px;background:var(--surf-cont-high)}
+  .barra span{display:block;height:100%}
+  .barra span[style*="width:0%"]{display:none}
+  .estado{display:inline-flex;align-items:center;gap:6px;font-size:12px;line-height:16px;font-weight:600;white-space:nowrap}
+  .estado::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--c)}
+  .alerta{display:inline-flex;align-items:center;justify-content:center;min-width:24px;height:24px;padding:0 8px;border-radius:var(--radius-sm);
+          background:var(--warning-container);color:var(--on-warning-container);font-size:12px;font-weight:600}
+  .tarde{color:var(--error);font-weight:600}
+  .leyenda{display:flex;gap:16px;flex-wrap:wrap;font-size:12px;color:var(--on-surface-variant);margin-top:12px}
+
+  /* Tag · radio 6px, colores semánticos soft */
+  .tag{display:inline-flex;align-items:center;gap:4px;border-radius:var(--radius-sm);padding:2px 8px;font-size:12px;line-height:16px;
+       letter-spacing:.3px;font-weight:600;white-space:nowrap;background:var(--surf-cont-high);color:var(--on-surface-variant);margin-left:4px;vertical-align:1px}
+  .tag.seg,.tag.ok{background:var(--success-container);color:var(--on-success-container);margin-left:0}
+  .tag.seg.sin{background:var(--surf-cont-high);color:var(--on-surface-variant)}
+  .tag.prim{background:var(--primary-container);color:var(--on-primary-container)}
+  .tag.warn{background:var(--warning-container);color:var(--on-warning-container)}
+  .tag.err{background:var(--error-container);color:var(--on-error-container)}
+  .tag.info{background:var(--info-container);color:var(--on-info-container)}
+  .cadena{display:inline-flex;gap:4px;flex-wrap:wrap}
+  .paso{font-size:12px;line-height:16px;font-weight:600;padding:2px 8px;border-radius:var(--radius-sm);border:1px solid var(--outline-variant);
+        color:var(--on-surface-variant);white-space:nowrap}
+  .paso.ok{border-color:transparent;background:var(--surf-cont-highest);color:var(--on-surface)}
+  .paso.ok[style*="prospecto"]{background:var(--info-container);color:var(--on-info-container)}
+  .paso.ok[style*="lead"]{background:var(--warning-container);color:var(--on-warning-container)}
+  .paso.ok[style*="deal"]{background:var(--primary-container);color:var(--on-primary-container)}
+
+  /* tarjetas de segmento */
+  .segcards{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px}
+  .segcard{text-align:left;border:0;background:var(--surf-cont-low);border-radius:var(--radius-3xl);padding:20px;cursor:pointer;position:relative;
+           display:flex;flex-direction:column;gap:4px;color:var(--on-surface);
+           box-shadow:0 1px 2px 0 color-mix(in srgb,var(--shadow) 30%,transparent),0 1px 3px 1px color-mix(in srgb,var(--shadow) 15%,transparent)}
+  .segcard::after{content:'';position:absolute;inset:0;border-radius:inherit;background:var(--on-surface);opacity:0;transition:opacity 140ms ease;pointer-events:none}
+  .segcard:hover::after{opacity:.08}
+  .segcard.on{box-shadow:inset 0 0 0 2px var(--primary)}
+  .segcard .nombre{font-family:var(--font-display);font-size:16px;line-height:24px}
+  .segnums{display:flex;flex-direction:column;gap:2px;font-size:12px;line-height:18px;margin:8px 0}
+  .segcard .barra{min-width:0}
+
+
+  /* validación en HubSpot: flujo de pasos + barra apilada de etapas */
+  .valida{margin-top:12px;display:flex;flex-direction:column;gap:24px}
+  .vflujo{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr) auto minmax(0,1fr) auto minmax(0,1fr);align-items:stretch;gap:8px}
+  .vpaso{position:relative;border-radius:var(--radius-xl);padding:16px;background:var(--surf-cont);display:flex;flex-direction:column;gap:2px}
+  .vpaso .ico{color:var(--primary);font-size:24px;margin-bottom:4px}
+  .vpaso .v{font-family:var(--font-display);font-size:32px;line-height:40px;letter-spacing:-.4px;font-weight:700}
+  .vpaso .l{font-family:var(--font-display);font-size:14px;line-height:20px;font-weight:600}
+  .vpaso .p{font-size:12px;line-height:16px;color:var(--on-surface-variant);min-height:16px}
+  .vpista{height:8px;border-radius:var(--radius-full);background:var(--surf-cont-high);margin-top:12px;overflow:hidden}
+  .vpista span{display:block;height:100%;background:var(--primary);border-radius:var(--radius-full)}
+  .vconv{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-width:96px;max-width:150px;text-align:center}
+  .vconv .ms{color:var(--on-surface-variant)}
+  .vconv b{font-family:var(--font-display);font-size:16px;line-height:24px}
+  .vconv .tag{margin-left:0;white-space:normal;text-align:center}
+  .clic-tag{cursor:pointer}
+  .clic-tag:hover{filter:brightness(1.08)}
+  .vetapas{border-top:1px solid var(--outline-variant);padding-top:20px;display:flex;flex-direction:column;gap:12px}
+  .vetapas-cab{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+  .vetapas-cab .tag{margin-left:0}
+  .vapilada{display:flex;gap:2px;height:24px;border-radius:var(--radius-md);overflow:hidden}
+  .vapilada span{display:block;height:100%}
+  .vleyenda{display:flex;flex-wrap:wrap;gap:8px}
+  .vley{display:inline-flex;align-items:center;gap:8px;height:32px;padding:0 12px;border-radius:var(--radius-full);border:1px solid var(--outline-variant);
+        background:transparent;cursor:pointer;font-size:12px;line-height:16px;font-weight:600;color:var(--on-surface)}
+  .vley b{font-family:var(--font-display);font-size:14px}
+  .vley .dot{margin-right:0}
+  .vley:hover{background:var(--state-hover)}
+  .vley.cero{opacity:.6}
+  @media (max-width:1000px){.vflujo{grid-template-columns:1fr}.vconv{flex-direction:row;max-width:none;min-width:0}}
+  /* gráficas */
+  .graficas{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin-top:12px}
+  .graficas .ancha{grid-column:1 / -1}
+  .card h3{font-family:var(--font-display);font-size:16px;line-height:24px;font-weight:600;margin:0}
+  .card .desc{font-size:12px;line-height:16px;color:var(--on-surface-variant);margin:2px 0 16px}
+  .embudo-kpis{display:grid;gap:0}
+  .embudo-kpi{padding:0 16px;min-width:0}
+  .embudo-kpi .v{font-family:var(--font-display);font-size:40px;line-height:48px;letter-spacing:-.25px;font-weight:700}
+  .embudo-kpi .l{font-family:var(--font-display);font-size:14px;line-height:20px;font-weight:600;margin-top:8px}
+  .embudo-kpi .p{font-size:12px;line-height:16px;color:var(--on-surface-variant);margin-top:4px}
+  .embudo-kpi.acento .v,.embudo-kpi.acento .l{color:var(--primary)}
+  .embudo-flujo{position:relative;height:120px;margin-top:16px}
+  .embudo-flujo svg{display:block;width:100%;height:100%}
+  .embudo-flujo .div{position:absolute;top:0;bottom:0;width:1px;background:var(--outline-variant)}
+  .hbar{display:grid;grid-template-columns:minmax(120px,170px) 1fr 64px;gap:12px;align-items:center;padding:4px 0;font-size:14px;line-height:20px}
+  .hbar .pista{height:20px;border-radius:0 4px 4px 0;position:relative}
+  .hbar .marca-b{position:absolute;left:0;top:0;bottom:0;background:var(--primary);border-radius:0 4px 4px 0;min-width:2px}
+  .hbar .marca-b.baja{background:var(--error)}
+  .hbar .val{text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
+  .hbar:hover{background:var(--state-hover);border-radius:var(--radius-md)}
+  .linea svg{display:block;width:100%;height:auto;overflow:visible}
+  .linea .eje{font-size:12px;fill:var(--on-surface-variant);font-family:var(--font-body)}
+  .tooltip{position:fixed;z-index:20;pointer-events:none;background:var(--inverse-surface);color:var(--inverse-on-surface);border-radius:var(--radius-md);
+           padding:8px 12px;font-size:12px;line-height:16px;box-shadow:0 4px 8px color-mix(in srgb,var(--shadow) 30%,transparent);opacity:0;transition:opacity 120ms ease}
+  .tooltip b{font-weight:700}
+
+  /* SidePanel · scrim 55%, superficie surface-container, título headline-sm */
+  .velo{position:fixed;inset:0;background:color-mix(in srgb,var(--scrim) 55%,transparent);z-index:9}
+  aside{position:fixed;top:0;right:0;bottom:0;width:min(640px,100vw);background:var(--surf-cont);z-index:10;overflow:auto;padding:24px 24px 64px;
+        box-shadow:0 8px 32px color-mix(in srgb,var(--shadow) 36%,transparent),0 2px 8px color-mix(in srgb,var(--shadow) 20%,transparent);
+        animation:entra 220ms cubic-bezier(.16,1,.3,1)}
+  @keyframes entra{from{transform:translateX(100%)}to{transform:none}}
+  aside h3{font-family:var(--font-display);font-size:24px;line-height:32px;letter-spacing:-.2px;font-weight:700;margin:4px 0 2px}
+  aside h4{font-family:var(--font-display);font-size:14px;line-height:20px;font-weight:600;color:var(--on-surface);margin:24px 0 8px}
+  .cerrar{float:right;width:36px;height:36px;padding:0;border:0;border-radius:var(--radius-full);background:var(--surf-cont-low)}
+  .cerrar:hover{background:var(--surf-cont-high)}
+  .links{display:flex;gap:16px;flex-wrap:wrap;margin-top:12px}
+  .links a,a.enlace{color:var(--primary);font-weight:600;font-size:14px;text-decoration:none}
+  .links a:hover{text-decoration:underline}
+  .hitos{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+  .hito{background:var(--surf-cont-low);border-radius:var(--radius-xl);padding:8px 12px;font-size:12px;line-height:16px}
+  .hito b{display:block;font-size:14px;line-height:20px}
+  .hito.ok{box-shadow:inset 3px 0 0 var(--c)}
+  .hito .f{color:var(--on-surface-variant);font-family:var(--font-mono);font-size:12px}
+  .lst{list-style:none;margin:0;padding:0}
+  .lst li{padding:12px 0;border-bottom:1px solid var(--outline-variant);font-size:14px;line-height:22px}
+  .act{display:grid;grid-template-columns:24px 1fr auto;gap:8px;align-items:start}
+  .act .d{color:var(--on-surface-variant);font-size:12px;line-height:16px;margin-top:2px}
+  .vacio{background:var(--surf-cont-low);border-radius:var(--radius-3xl);padding:32px;margin-top:24px;line-height:1.7}
+  .vacio code,code{font-family:var(--font-mono);background:var(--surf-cont-high);padding:2px 6px;border-radius:var(--radius-sm);font-size:12px}
+  @media (max-width:900px){.graficas{grid-template-columns:1fr}}
+  @media (max-width:700px){.hitos{grid-template-columns:repeat(2,1fr)} input[type=search]{min-width:0;width:100%}
+    .wrap{padding:0 16px 64px} .embudo-kpi .v{font-size:28px;line-height:36px} .marca .sep,.marca .sub-marca{display:none}}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <div class="marca">
+      <svg role="img" aria-label="Platzi Business" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1064.8 165.59"><path class="cls-1" d="m482.45,74.72h-9.33v-5.3h9.33v-15.16c0-5.51,2.76-9.01,8.48-9.01h9.54v5.3h-11.98v18.87h11.98v5.3h-11.98v48.98h-6.04v-48.98Z"></path><path class="cls-1" d="m507.89,96.56c0-17.81,9.33-28.41,23.64-28.41s23.64,10.6,23.64,28.41-9.33,28.41-23.64,28.41-23.64-10.6-23.64-28.41Zm40.82,3.39v-6.79c0-12.62-6.68-19.61-17.18-19.61s-17.17,6.89-17.17,19.61v6.79c0,12.62,6.68,19.61,17.17,19.61s17.18-6.89,17.18-19.61Z"></path><path class="cls-1" d="m570.55,123.7v-54.28h6.04v9.75h.42c2.12-5.09,6.89-9.75,16.22-9.75h3.6v5.94h-4.77c-9.01,0-15.48,4.24-15.48,11.24v37.11h-6.04Z"></path><path class="cls-1" d="m634.05,49.7h28.94c11.56,0,18.55,7,18.55,18.66,0,10.28-5.83,14.84-11.34,16.12v.42c6.89.85,14.21,6.36,14.21,17.92,0,12.19-7.42,20.89-18.77,20.89h-31.59V49.7Zm6.36,32.76h21.95c8.06,0,12.4-4.88,12.4-11.56v-4.03c0-6.79-4.35-11.56-12.4-11.56h-21.95v27.14Zm0,35.62h23.54c8.91,0,13.68-5.41,13.68-13.15v-3.92c0-7.63-4.77-13.04-13.68-13.04h-23.54v30.11Z"></path><path class="cls-1" d="m734.98,115.11h-.42c-2.01,5.09-6.47,9.86-15.8,9.86-11.56,0-18.45-7.42-18.45-20.67v-34.88h6.04v33.71c0,11.13,4.98,16.43,14,16.43,7.53,0,14.63-3.92,14.63-12.09v-38.06h6.04v54.28h-6.04v-8.59Z"></path><path class="cls-1" d="m755.24,114.58l4.45-3.5c4.45,5.83,9.65,8.69,16.86,8.69,8.27,0,13.04-3.71,13.04-10.28,0-5.73-3.29-9.01-11.13-10.18l-4.45-.74c-9.86-1.48-16.65-5.41-16.65-15.16s7.95-15.27,18.45-15.27c9.01,0,14.52,3.5,18.55,8.38l-4.03,3.71c-2.86-3.39-7.32-6.89-14.84-6.89s-12.3,3.6-12.3,9.75,3.92,8.69,11.66,9.96l4.35.64c11.03,1.7,16.22,6.47,16.22,15.16,0,10.07-7.32,16.12-19.29,16.12-9.44,0-16.01-3.71-20.89-10.39Z"></path><path class="cls-1" d="m810.15,50.87v-1.06c0-2.23,1.27-3.82,4.13-3.82s4.13,1.59,4.13,3.82v1.06c0,2.23-1.27,3.82-4.13,3.82s-4.13-1.59-4.13-3.82Zm1.17,18.55h6.04v54.28h-6.04v-54.28Z"></path><path class="cls-1" d="m837.08,123.7v-54.28h6.04v8.59h.32c2.44-5.62,7.32-9.86,16.01-9.86,11.56,0,18.34,7.42,18.34,20.67v34.88h-6.04v-33.82c0-11.03-4.88-16.33-13.89-16.33-7.63,0-14.74,3.92-14.74,11.98v38.17h-6.04Z"></path><path class="cls-1" d="m892.42,96.56c0-17.81,9.22-28.41,23.64-28.41s22.9,10.81,22.9,26.72v2.86h-40.18v2.65c0,11.34,6.57,19.3,17.71,19.3,7.74,0,13.46-3.82,16.43-10.92l4.45,2.97c-3.39,7.95-10.92,13.25-21.2,13.25-14.52,0-23.75-10.6-23.75-28.41Zm6.36-4.03v.53h33.61v-.85c0-11.45-6.57-18.98-16.33-18.98-10.5,0-17.28,7.85-17.28,19.3Z"></path><path class="cls-1" d="m948.83,114.58l4.45-3.5c4.45,5.83,9.65,8.69,16.86,8.69,8.27,0,13.04-3.71,13.04-10.28,0-5.73-3.29-9.01-11.13-10.18l-4.45-.74c-9.86-1.48-16.65-5.41-16.65-15.16s7.95-15.27,18.45-15.27c9.01,0,14.52,3.5,18.55,8.38l-4.03,3.71c-2.86-3.39-7.32-6.89-14.84-6.89s-12.3,3.6-12.3,9.75,3.92,8.69,11.66,9.96l4.35.64c11.03,1.7,16.22,6.47,16.22,15.16,0,10.07-7.32,16.12-19.29,16.12-9.44,0-16.01-3.71-20.89-10.39Z"></path><path class="cls-1" d="m998.55,114.58l4.45-3.5c4.45,5.83,9.65,8.69,16.86,8.69,8.27,0,13.04-3.71,13.04-10.28,0-5.73-3.29-9.01-11.13-10.18l-4.45-.74c-9.86-1.48-16.65-5.41-16.65-15.16s7.95-15.27,18.45-15.27c9.01,0,14.52,3.5,18.55,8.38l-4.03,3.71c-2.86-3.39-7.32-6.89-14.84-6.89s-12.3,3.6-12.3,9.75,3.92,8.69,11.66,9.96l4.35.64c11.03,1.7,16.22,6.47,16.22,15.16,0,10.07-7.32,16.12-19.29,16.12-9.44,0-16.01-3.71-20.89-10.39Z"></path><path class="cls-2" d="m72.93,27.89l-41.18,41.18c-7.58,7.58-7.58,19.87,0,27.45l41.18,41.18c7.58,7.58,19.87,7.58,27.45,0l13.73-13.73-13.73-13.73-13.73,13.73-41.18-41.18,41.18-41.18,27.45,27.45-27.45,27.45,13.73,13.73,27.45-27.45c7.58-7.58,7.58-19.87,0-27.45l-27.45-27.45c-7.58-7.58-19.87-7.58-27.45,0Z"></path><path class="cls-1" d="m152.94,124.44V41.61h34.31c18.46,0,29.23,13.49,29.23,29.23s-11,28.75-29.23,28.75h-20.47v24.85h-13.84Zm34.31-36.92c9.35,0,15.97-7.45,15.97-17.04s-6.39-16.92-15.97-16.92h-20.71v33.96h20.71Z"></path><path class="cls-1" d="m237.97,41.61v62.36c0,9.47,2.48,12.42,12.31,10.89l.47,9.94c-17.51,2.84-25.56-1.66-25.56-20.71v-62.48h12.78Z"></path><path class="cls-1" d="m309.77,107.4c0,5.21-.12,8.52,6.15,7.93v8.76c-8.16,1.54-16.57.59-16.57-8.87v-2.37c-3.19,7.93-11.24,12.42-19.64,12.42-17.39,0-25.8-13.96-25.8-30.06.36-18.93,13.84-29.35,32.42-28.99,8.16,0,15.97,2.01,23.43,5.32v35.85Zm-12.42-28.4c-3.9-1.77-8.28-2.37-11.95-2.37-10.89,0-18.22,6.27-18.58,18.58,0,10.41,5.09,18.58,15.62,18.58,9.58,0,14.55-7.45,14.91-17.99v-16.8Z"></path><path class="cls-1" d="m342.98,67.53h19.76v10.41h-19.76v24.49c0,14.55,9.11,15.5,20.83,11.36l1.3,9.7c-19.52,6.03-34.79,1.54-34.79-20.83v-24.73h-11.6v-10.41h11.6v-13.96h12.66v13.96Z"></path><path class="cls-1" d="m370.85,121.84l16.57-25.91,12.42-17.99h-27.22v-10.53h45.79v1.66l-17.63,27.33-11.6,16.92h29.11v11.12h-47.45v-2.6Z"></path><path class="cls-1" d="m433.93,41.48c3.9,0,7.69,2.6,7.69,7.57s-3.79,7.69-7.57,7.69-7.93-2.48-7.93-7.69,3.9-7.57,7.81-7.57Zm6.39,82.97h-12.9v-56.92h12.9v56.92Z"></path></svg>
+      <span class="sep"></span>
+      <div>
+        <h1>Follow up outbound</h1>
+        <div class="sub" id="generado">Sin sincronizar</div>
+      </div>
+    </div>
+    <div class="grow"></div>
+    <span class="progreso" id="progreso"></span>
+    <a class="btn" href="/gestiones.html" style="text-decoration:none" title="Vista ejecutiva y operativa: salud de envío, embudo y cola de gestiones"><span class="ms">monitoring</span>Gestiones</a>
+    <button class="btn" id="btn-secuencias"><span class="ms">tune</span>Secuencias</button>
+    <button class="btn" id="recargar" title="Vuelve a leer los datos más recientes sin sincronizar"><span class="ms">refresh</span>Recargar</button>
+    <button class="btn" id="exportar"><span class="ms">download</span>CSV</button>
+    <button class="btn prim" id="sync"><span class="ms">sync</span>Sincronizar</button>
+    <button class="btn icono" id="tema" title="Cambiar tema" aria-label="Cambiar entre modo oscuro y claro"><span class="ms">light_mode</span></button>
+  </div>
+</header>
+
+<main class="wrap">
+  <div id="errores"></div>
+  <div id="contenido"></div>
+</main>
+
+<div id="panel"></div>
+
+<script>
+const ESTADOS = {
+  no_en_hubspot: 'No está en HubSpot',
+  sin_tocar: 'Sin tocar',
+  contactada: 'Contactada',
+  respondio: 'Respondió',
+  reunion: 'Reunión',
+  deal: 'Deal',
+};
+const ORDEN = Object.keys(ESTADOS);
+const ICONO = {correo:'mail', llamada:'call', reunion:'event', mensaje:'chat', nota:'sticky_note_2'};
+const ALERTAS = {
+  owner_distinto:'Owner distinto', sin_owner:'Sin owner', cliente:'Ya es cliente', deal_previo:'Deal abierto previo',
+  duplicada:'Empresa duplicada', coincidencia_aproximada:'Verificar coincidencia',
+  sin_registro_hubspot:'Sin registro en HubSpot', sin_canal:'Sin canal válido', asignacion_doble:'Asignada a dos reps', contactos_faltantes:'Contactos fuera de HubSpot', toque_de_otro:'Tocada por otro owner', tratada_antes:'Tratada antes de la base',
+};
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const pct = (a, b) => b ? Math.round(100 * a / b) + '%' : '—';
+// porcentaje que no esconde lo pequeño: 1 de 763 es «<1%», 673 de 675 es «>99%»
+const pctFino = (a, b) => { if (!b) return '—'; const r = Math.round(100 * a / b);
+  return a > 0 && r === 0 ? '<1%' : a < b && r === 100 ? '>99%' : r + '%'; };
+// Fechas sin hora (inicio de semana) se leen como mediodía local para no correrse un día
+const aFecha = s => new Date(String(s).length === 10 ? s + 'T12:00' : s);
+const fecha = s => s ? aFecha(s).toLocaleDateString('es-CO', {day:'2-digit', month:'short'}) : '—';
+const fechaHora = s => s ? new Date(s).toLocaleString('es-CO', {day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit'}) : '—';
+// días desde el lunes de la base (medianoche local) hasta el evento
+const dias = (inicio, hasta) => Math.floor((new Date(hasta) - new Date(inicio + 'T00:00')) / 864e5);
+const hsUrl = (tipo, id) => D.portal_id ? `https://app.hubspot.com/contacts/${D.portal_id}/record/${tipo}/${id}` : null;
+const estadoHtml = s => `<span class="estado" style="--c:var(--e-${s})">${ESTADOS[s]}</span>`;
+
+// En Vercel la página es una foto: datos.json e historial.json los publica la app local
+// después de cada sincronización (publicar_vercel.py). Sincronizar y configurar solo existen en local.
+const ESTATICO = !['127.0.0.1', 'localhost'].includes(location.hostname);
+let HIST = null;
+
+async function cargar() {
+  D = await (await fetch(ESTATICO ? '/datos.json' : '/api/datos', {cache: 'no-store'})).json();
+  if (ESTATICO) PROGRAMACION = D.programacion ?? null;
+  $('#generado').textContent = (D.generado ? 'Última sincronización: ' + fechaHora(D.generado) : 'Sin sincronizar todavía')
+    + (PROGRAMACION ? ' · ' + PROGRAMACION : '');
+  const semanas = [...new Set(D.bases.map(b => b.semana_clave))];
+  if (!semanas.includes(F.semana)) F.semana = semanas[0] || null;
+  pintar();
+}
+
+let D = {bases: []};
+const F = {semana: null, segmento: '', lider: '', rep: '', vista: 'resumen', estado: '', q: '', alertas: false,
+           nivel: '', brechas: false, trabajados: false, orden: 'estado', dir: 1};
+
+// Segmentos y equipo: equipo.json (seller → segmento, equipo, región, líder)
+const SEG_BASE = {smb: 'SMB', mid_market: 'Mid Market', corporate: 'Corporate', gobierno: 'Gobierno', sdr_ent: 'SDR ENT'};
+const segmentos = () => ({...SEG_BASE, ...(D.segmentos || {})});
+const segNombre = s => segmentos()[s] || 'Sin segmento';
+const segHtml = s => `<span class="tag seg ${segmentos()[s] ? '' : 'sin'}">${esc(segNombre(s))}</span>`;
+const ordenSeg = s => { const i = Object.keys(segmentos()).indexOf(s); return i < 0 ? 99 : i; };
+
+// Tratamiento de cada contacto en HubSpot (sincronizar.py · _tratamiento_contacto)
+const NIVELES = ['no_en_hubspot', 'contacto', 'prospecto', 'lead', 'deal'];
+const NIVEL_TXT = {no_en_hubspot: 'No está en HubSpot', contacto: 'Contacto', prospecto: 'Prospecto', lead: 'Lead', deal: 'Deal'};
+const BRECHAS = {no_en_hubspot: 'No existe en HubSpot', sin_actividad: 'Sin actividad en HubSpot', sin_avance: 'Respondió y no avanzó'};
+const ESTADO_SEC = {active: 'Activa', draft: 'Borrador', paused: 'Pausada', archived: 'Archivada', completed: 'Terminada'};
+
+function equipo() {
+  const lista = (D.equipo || []).map(s => ({...s}));
+  const vistos = new Set(lista.map(s => s.email));
+  for (const b of D.bases) {
+    const e = (b.rep_email || '').toLowerCase();
+    if (e && !vistos.has(e)) {
+      vistos.add(e);
+      lista.push({email: e, nombre: b.rep_nombre || e, segmento: b.segmento || 'sin_segmento', equipo: null, region: null, lider: null});
+    }
+  }
+  return lista.sort((a, b) => ordenSeg(a.segmento) - ordenSeg(b.segmento) || a.nombre.localeCompare(b.nombre));
+}
+const pasaFiltro = s => (!F.segmento || (s.segmento || 'sin_segmento') === F.segmento) && (!F.lider || s.lider === F.lider)
+  && (!F.rep || s.email === F.rep);
+const sellersFiltrados = () => equipo().filter(pasaFiltro);
+
+function basesDeLaSemana() {
+  return D.bases.filter(b => b.semana_clave === F.semana);
+}
+
+// Bases de la semana de los sellers que pasan el filtro: alimentan KPIs, contactos, empresas, desglose y CSV
+function basesSemana() {
+  const ok = new Set(sellersFiltrados().map(s => s.email));
+  return basesDeLaSemana().filter(b => ok.has((b.rep_email || '').toLowerCase()));
+}
+
+// Las suyas y las compartidas donde tiene leads (p. ej. Chile y DAPTA para los SDR)
+function secuenciasDe(email) {
+  return (D.secuencias || []).filter(s => s.rep === email || (s.reps || []).includes(email));
+}
+
+function sumarContactos(bs) {
+  const t = {total: 0, trabajados: 0, respondieron: 0, en_hubspot: 0, trabajados_en_hs: 0, con_actividad: 0,
+             con_brechas: 0, por_nivel: {}, brechas: {}};
+  for (const b of bs) {
+    const c = b.resumen?.contactos_hs;
+    if (!c) continue;
+    for (const k of Object.keys(t)) {
+      if (k === 'por_nivel' || k === 'brechas') for (const [x, n] of Object.entries(c[k] || {})) t[k][x] = (t[k][x] || 0) + n;
+      else t[k] += c[k] || 0;
+    }
+  }
+  return t;
+}
+
+function barraNiveles(c) {
+  const n = c.total || 1;
+  return `<div class="barra" title="${NIVELES.map(s => `${NIVEL_TXT[s]}: ${c.por_nivel[s] || 0}`).join(' · ')}">${
+    [...NIVELES].reverse().map(s => `<span style="width:${100 * (c.por_nivel[s] || 0) / n}%;background:var(--n-${s})"></span>`).join('')}</div>`;
+}
+
+function pintar() {
+  const c = $('#contenido');
+  if (!D.bases.length && !(D.secuencias || []).length) {
+    c.innerHTML = `<div class="vacio">
+      <b>Todavía no hay bases.</b><br>
+      Las secuencias que crean los sellers de <code>equipo.json</code> se siguen solas; las demás se marcan en <b>Secuencias</b>.
+      Pulsa <b>Sincronizar</b>. Para leer los leads hace falta el Chrome dedicado con sesión en Amplemarket.
+      ${avisosHtml()}</div>`;
+    return;
+  }
+  const semanas = [...new Set(D.bases.map(b => b.semana_clave))];
+  const todos = equipo();
+  const nSeg = s => todos.filter(x => (x.segmento || 'sin_segmento') === s).length;
+  const segChips = [['', 'Todos los segmentos', todos.length], ...Object.entries(segmentos()).map(([k, l]) => [k, l, nSeg(k)]),
+    ...(nSeg('sin_segmento') ? [['sin_segmento', 'Sin segmento', nSeg('sin_segmento')]] : [])];
+  const enSeg = todos.filter(s => !F.segmento || (s.segmento || 'sin_segmento') === F.segmento);
+  const lideres = [...new Set(enSeg.map(s => s.lider).filter(Boolean))].sort();
+  const reps = enSeg.filter(s => !F.lider || s.lider === F.lider);
+  const vistas = [['resumen', 'Resumen', 'dashboard'], ['secuencias', 'Secuencias', 'route'],
+                  ['contactos', 'Contactos en HubSpot', 'fact_check'], ['empresas', 'Empresas', 'apartment']];
+
+  c.innerHTML = `
+    <div class="filtros">
+      <span class="etq">Semana</span>
+      <div class="chips">${semanas.map(s => {
+        const b = D.bases.find(x => x.semana_clave === s);
+        return `<button class="chip ${s === F.semana ? 'on' : ''}" data-semana="${s}">${s === F.semana ? '<span class="ms">check</span>' : ''}S${b.semana} · ${fecha(b.inicio)}</button>`;
+      }).join('')}</div>
+    </div>
+    <div class="filtros" style="margin-top:10px">
+      <span class="etq">Segmento</span>
+      <div class="chips">${segChips.map(([k, l, n]) =>
+        `<button class="chip ${F.segmento === k ? 'on' : ''}" data-segmento="${k}">${F.segmento === k ? '<span class="ms">check</span>' : ''}${esc(l)}<span class="n">${n}</span></button>`).join('')}</div>
+      <select id="f-lider"><option value="">Todos los líderes</option>${lideres.map(l =>
+        `<option ${F.lider === l ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select>
+      <select id="f-rep"><option value="">Todos los sellers</option>${reps.map(s =>
+        `<option value="${esc(s.email)}" ${F.rep === s.email ? 'selected' : ''}>${esc(s.nombre)}</option>`).join('')}</select>
+    </div>
+    <div class="tabs">${vistas.map(([k, l, i]) =>
+      `<button class="tab ${F.vista === k ? 'on' : ''}" data-vista="${k}"><span class="ms">${i}</span>${l}</button>`).join('')}</div>
+    <div id="vista"></div>
+    ${avisosHtml()}`;
+
+  c.querySelectorAll('[data-semana]').forEach(b => b.onclick = () => { F.semana = b.dataset.semana; pintar(); });
+  c.querySelectorAll('[data-segmento]').forEach(b => b.onclick = () => { F.segmento = b.dataset.segmento; F.lider = ''; F.rep = ''; pintar(); });
+  c.querySelectorAll('[data-vista]').forEach(b => b.onclick = () => { F.vista = b.dataset.vista; pintar(); });
+  $('#f-lider').onchange = e => { F.lider = e.target.value; F.rep = ''; pintar(); };
+  $('#f-rep').onchange = e => { F.rep = e.target.value; pintar(); };
+  ({resumen: vistaResumen, secuencias: vistaSecuencias, contactos: vistaContactos, empresas: vistaEmpresas})[F.vista]();
+}
+
+// ── Gráficas de resultados (Resumen) ───────────────────────────────────────────
+// Una serie por gráfica, color primario, un solo eje, tooltip al pasar el cursor.
+const nf = new Intl.NumberFormat('es-CO');
+
+async function cargarHistorial() {
+  if (!HIST) HIST = await (await fetch(ESTATICO ? '/historial.json' : '/api/historial_todo', {cache: 'no-store'})).json();
+  return HIST;
+}
+
+// Embudo · componente Sinapsis: fila de KPIs + flujo suavizado con degradado primario + divisores
+function embudoHtml(etapas) {
+  const W = 1000, H = 100, n = etapas.length, seg = W / n;
+  const max = Math.max(...etapas.map(s => s.v), 1);
+  const alto = etapas.map(s => Math.max((s.v / max) * H, 2));
+  const pts = signo => alto.map((h, i) => [i * seg + seg / 2, (H + signo * h) / 2]);
+  const curva = (p, ida) => {
+    let d = '';
+    for (let i = 1; i < p.length; i++) {
+      const [xa, ya] = p[i - 1], [xb, yb] = p[i], mx = (xa + xb) / 2;
+      d += ` C${mx},${ya} ${mx},${yb} ${xb},${yb}`;
+    }
+    return d;
+  };
+  const arriba = pts(-1), abajo = pts(1).reverse();
+  const d = `M0,${arriba[0][1]} L${arriba[0][0]},${arriba[0][1]}${curva(arriba)} L${W},${arriba.at(-1)[1]}`
+    + ` L${W},${abajo[0][1]} L${abajo[0][0]},${abajo[0][1]}${curva(abajo)} L0,${abajo.at(-1)[1]} Z`;
+  const id = 'emb' + Math.random().toString(36).slice(2, 7);
+  return `<div class="embudo-kpis" style="grid-template-columns:repeat(${n},minmax(0,1fr))">${etapas.map((s, i) => `
+      <div class="embudo-kpi ${i === n - 1 ? 'acento' : ''}">
+        <div class="v">${nf.format(s.v)}</div><div class="l">${esc(s.l)}</div>
+        <div class="p">${i === 0 ? '100%' : `${pct(s.v, etapas[0].v)} del total`}${s.nota ? ' · ' + esc(s.nota) : ''}</div>
+      </div>`).join('')}</div>
+    <div class="embudo-flujo">
+      <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true">
+        <defs><linearGradient id="${id}" x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" style="stop-color:var(--primary);stop-opacity:.16"></stop>
+          <stop offset="70%" style="stop-color:var(--primary);stop-opacity:.45"></stop>
+          <stop offset="100%" style="stop-color:var(--primary);stop-opacity:.9"></stop>
+        </linearGradient></defs>
+        <path d="${d}" fill="url(#${id})"></path>
+      </svg>
+      ${etapas.slice(1).map((_, i) => `<span class="div" style="left:${(i + 1) / n * 100}%"></span>`).join('')}
+    </div>`;
+}
+
+// Barras horizontales: una fila por seller, ordenadas de mayor a menor, valor rotulado al final
+function barrasHtml(filas, sinDatos) {
+  if (!filas.length) return `<p class="muted">${sinDatos}</p>`;
+  return filas.sort((a, b) => b.v - a.v).map(f => `
+    <div class="hbar" data-tip="${esc(f.tip)}">
+      <span>${esc(f.nombre)}</span>
+      <div class="pista"><span class="marca-b" style="width:${Math.round(f.v * 100)}%"></span></div>
+      <span class="val">${Math.round(f.v * 100)}%</span>
+    </div>`).join('');
+}
+
+// Línea de avance diario: empresas contactadas acumuladas al cierre de cada día
+function avanceDiario(bs, hist) {
+  const claves = bs.flatMap(b => b.empresas.map(e => `${b.lista_id}|${e.clave}`));
+  const dias = [...new Set(claves.flatMap(k => (hist[k] || []).map(c => c.ts.slice(0, 10))))].sort();
+  const iC = ORDEN.indexOf('contactada'), iR = ORDEN.indexOf('respondio'), iM = ORDEN.indexOf('reunion');
+  return dias.map(dia => {
+    const t = {dia, contactadas: 0, respondieron: 0, reuniones: 0};
+    for (const k of claves) {
+      const cambios = (hist[k] || []).filter(c => c.ts.slice(0, 10) <= dia);
+      if (!cambios.length) continue;
+      const i = ORDEN.indexOf(cambios.at(-1).estado);
+      t.contactadas += i >= iC; t.respondieron += i >= iR; t.reuniones += i >= iM;
+    }
+    return t;
+  });
+}
+
+function lineaHtml(serie, ancho = 640) {
+  if (serie.length < 2) return '<p class="muted">Hace falta más de un día de historial para dibujar el avance.</p>';
+  const W = Math.max(Math.round(ancho), 320), H = 200, iz = 40, de = 56, ar = 12, ab = 28;
+  const max = Math.max(...serie.map(s => s.contactadas), 1);
+  const paso = 10 ** Math.floor(Math.log10(max)), tope = Math.ceil(max / paso) * paso;
+  const x = i => iz + (W - iz - de) * (serie.length === 1 ? 0 : i / (serie.length - 1));
+  const y = v => ar + (H - ar - ab) * (1 - v / tope);
+  const marcas = [0, tope / 2, tope];
+  const d = serie.map((s, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(s.contactadas).toFixed(1)}`).join(' ');
+  const ultimo = serie.at(-1);
+  return `<div class="linea"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Empresas contactadas por día">
+    ${marcas.map(m => `<line x1="${iz}" x2="${W - de}" y1="${y(m)}" y2="${y(m)}" style="stroke:var(--outline-variant)" stroke-width="1"></line>
+      <text class="eje" x="${iz - 8}" y="${y(m) + 4}" text-anchor="end">${nf.format(m)}</text>`).join('')}
+    ${serie.map((s, i) => `<text class="eje" x="${x(i)}" y="${H - 6}" text-anchor="middle">${fecha(s.dia)}</text>`).join('')}
+    <path d="${d}" fill="none" style="stroke:var(--primary)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"></path>
+    ${serie.map((s, i) => `<circle cx="${x(i)}" cy="${y(s.contactadas)}" r="4" style="fill:var(--primary);stroke:var(--surf-cont-low)" stroke-width="2"></circle>`).join('')}
+    <text class="eje" x="${x(serie.length - 1) + 10}" y="${y(ultimo.contactadas) + 4}" style="fill:var(--on-surface);font-weight:600">${nf.format(ultimo.contactadas)}</text>
+    ${serie.map((s, i) => {
+      const ancho = (W - iz - de) / Math.max(serie.length - 1, 1);
+      return `<rect x="${x(i) - ancho / 2}" y="0" width="${ancho}" height="${H - ab}" fill="transparent"
+        data-tip="${esc(`${fecha(s.dia)} · ${nf.format(s.contactadas)} contactadas · ${s.respondieron} respondieron · ${s.reuniones} con reunión`)}"></rect>`;
+    }).join('')}
+  </svg></div>`;
+}
+
+function graficasHtml(bs) {
+  const t = sumar(bs);
+  const semana = basesDeLaSemana();
+  const filasSeller = sellersFiltrados().map(s => ({s, b: semana.find(x => (x.rep_email || '').toLowerCase() === s.email)})).filter(x => x.b);
+  const cobertura = filasSeller.filter(({b}) => b.resumen.empresas).map(({s, b}) => ({
+    nombre: s.nombre, v: b.resumen.contactadas / b.resumen.empresas,
+    tip: `${s.nombre} · ${b.resumen.contactadas} de ${b.resumen.empresas} empresas contactadas · ${b.resumen.respondieron} respondieron · ${b.resumen.reuniones} con reunión`,
+  }));
+  const validacion = filasSeller.filter(({b}) => b.resumen.contactos_hs?.trabajados).map(({s, b}) => {
+    const c = b.resumen.contactos_hs;
+    return {nombre: s.nombre, v: c.con_actividad / c.trabajados,
+            tip: `${s.nombre} · ${c.con_actividad} de ${c.trabajados} contactos trabajados con actividad en HubSpot · ${c.con_brechas} con brechas`};
+  });
+  return `<div class="graficas">
+    <div class="card ancha">
+      <h3>Resultados de la semana</h3>
+      <p class="desc">Empresas de las bases filtradas, del inicio de la semana a hoy. Cada etapa cuenta las empresas que la alcanzaron.</p>
+      ${t.empresas ? embudoHtml([
+        {l: 'Asignadas', v: t.empresas}, {l: 'Contactadas', v: t.contactadas}, {l: 'Respondieron', v: t.respondieron},
+        {l: 'Con reunión', v: t.reuniones}, {l: 'Con deal nuevo', v: t.deals}]) : '<p class="muted">Sin bases para este filtro.</p>'}
+    </div>
+    <div class="card">
+      <h3>Cobertura por seller</h3>
+      <p class="desc">% de las empresas de su base que ya recibieron al menos un toque.</p>
+      ${barrasHtml(cobertura, 'Ningún seller de este filtro tiene base esta semana.')}
+    </div>
+    <div class="card">
+      <h3>Tratamiento registrado en HubSpot</h3>
+      <p class="desc">% de los contactos trabajados en Amplemarket con actividad en HubSpot desde el inicio.</p>
+      ${barrasHtml(validacion, 'Todavía no hay contactos trabajados en este filtro.')}
+    </div>
+    <div class="card ancha">
+      <h3>Avance día a día</h3>
+      <p class="desc">Empresas contactadas acumuladas al cierre de cada día, según las sincronizaciones. Pasa el cursor para ver respuestas y reuniones.</p>
+      <div id="avance"><p class="muted">Cargando historial…</p></div>
+    </div>
+  </div>`;
+}
+
+async function pintarAvance(bs) {
+  const caja = $('#avance');
+  if (!caja) return;
+  try {
+    const hist = await cargarHistorial();
+    if (document.body.contains(caja)) caja.innerHTML = lineaHtml(avanceDiario(bs, hist), caja.clientWidth);
+  } catch (e) {
+    caja.innerHTML = '<p class="muted">No se pudo leer el historial.</p>';
+  }
+}
+
+// Tooltip compartido para todo lo que tenga data-tip
+const TIP = Object.assign(document.createElement('div'), {className: 'tooltip', role: 'tooltip'});
+document.body.appendChild(TIP);
+document.addEventListener('mousemove', ev => {
+  const el = ev.target.closest?.('[data-tip]');
+  if (!el) { TIP.style.opacity = 0; return; }
+  TIP.textContent = el.dataset.tip;
+  TIP.style.opacity = 1;
+  const x = Math.min(ev.clientX + 14, innerWidth - TIP.offsetWidth - 8);
+  TIP.style.left = x + 'px';
+  TIP.style.top = (ev.clientY + 16) + 'px';
+});
+
+
+// ── Validación en HubSpot: flujo de 4 pasos con fugas + etapa en HubSpot (barra apilada) ──
+function validacionHtml(t) {
+  const b = t.brechas, n = t.por_nivel;
+  const pasos = [
+    {ico: 'group', v: t.total, l: 'Contactos en secuencias', p: `${t.respondieron} respondieron en Amplemarket`, ir: 'todos'},
+    {ico: 'send', v: t.trabajados, l: 'Trabajados en Amplemarket', p: 'con primer contacto enviado', ir: 'trabajados'},
+    {ico: 'person_check', v: t.trabajados_en_hs, l: 'Existen en HubSpot', p: 'de los trabajados', ir: 'trabajados'},
+    {ico: 'history', v: t.con_actividad, l: 'Con actividad en HubSpot', p: 'correo, llamada o mensaje registrado', ir: 'trabajados'},
+  ];
+  // fuga entre un paso y el siguiente: qué se perdió y por qué
+  const fugas = [
+    {txt: `${nf.format(t.total - t.trabajados)} aún sin trabajar`, tipo: '', ir: ''},
+    {txt: `${nf.format(b.no_en_hubspot || 0)} no existen en HubSpot`, tipo: b.no_en_hubspot ? 'err' : 'ok', ir: 'brechas'},
+    {txt: `${nf.format(b.sin_actividad || 0)} sin actividad registrada`, tipo: b.sin_actividad ? 'warn' : 'ok', ir: 'brechas'},
+  ];
+  const max = Math.max(t.total, 1);
+  const flujo = pasos.map((s, i) => `
+    ${i ? `<div class="vconv">
+        <span class="ms">arrow_forward</span>
+        <b>${pctFino(s.v, pasos[i - 1].v)}</b>
+        <span class="tag ${fugas[i - 1].tipo} ${fugas[i - 1].ir ? 'clic-tag' : ''}" ${fugas[i - 1].ir ? `data-ir="${fugas[i - 1].ir}"` : ''}>${esc(fugas[i - 1].txt)}</span>
+      </div>` : ''}
+    <div class="vpaso clic" data-ir="${s.ir}" data-tip="${esc(`${s.l}: ${nf.format(s.v)} · ${pct(s.v, t.total)} del total`)}">
+      <span class="ms ico">${s.ico}</span>
+      <div class="v">${nf.format(s.v)}</div>
+      <div class="l">${esc(s.l)}</div>
+      <div class="p">${esc(s.p)}</div>
+      <div class="vpista"><span style="width:${100 * s.v / max}%"></span></div>
+    </div>`).join('');
+  const etapas = NIVELES.map(k => ({k, v: n[k] || 0}));
+  const apilada = etapas.filter(e => e.v).map(e => `<span style="flex:${e.v} 0 4px;background:var(--n-${e.k})"
+      data-tip="${esc(`${NIVEL_TXT[e.k]}: ${nf.format(e.v)} · ${pctFino(e.v, t.total)}`)}"></span>`).join('');
+  const resp = t.respondieron;
+  return `<div class="card valida">
+    <div class="vflujo">${flujo}</div>
+    <div class="vetapas">
+      <div class="vetapas-cab">
+        <h3>Etapa en HubSpot de los ${nf.format(t.total)} contactos</h3>
+        <span class="tag ${b.sin_avance ? 'warn clic-tag' : 'ok'}" ${b.sin_avance ? 'data-ir="brechas"' : ''}>${
+          resp ? `${nf.format(b.sin_avance || 0)} de ${nf.format(resp)} que respondieron siguen sin Lead ni Deal` : 'Nadie ha respondido todavía'}</span>
+      </div>
+      <div class="vapilada">${apilada || '<span style="flex:1;background:var(--surf-cont-high)"></span>'}</div>
+      <div class="vleyenda">${etapas.map(e => `<button class="vley ${e.v ? '' : 'cero'}" data-ir="${e.k}">
+        <span class="dot" style="background:var(--n-${e.k})"></span>${NIVEL_TXT[e.k]}<b>${nf.format(e.v)}</b><span class="muted">${pctFino(e.v, t.total)}</span></button>`).join('')}</div>
+    </div>
+  </div>`;
+}
+
+// ── Resumen: validación de contactos por segmento y seller ─────────────────────
+function vistaResumen() {
+  const bs = basesSemana(), t = sumarContactos(bs), b0 = basesDeLaSemana()[0];
+  const k = (v, l, p, color, ir, ico) => `<div class="kpi ${ir ? 'clic' : ''}" ${ir ? `data-ir="${ir}"` : ''}>${ico ? `<span class="ms ico">${ico}</span>` : ''}<div class="v">${nf.format(v)}</div>
+    <div class="l">${color ? `<span class="dot" style="background:var(--n-${color})"></span>` : ''}${l}</div>${p ? `<div class="p">${p}</div>` : ''}</div>`;
+  const b = t.brechas;
+  $('#vista').innerHTML = `
+    <div class="sub" style="margin-top:14px">Semana ${b0?.semana ?? '—'} de ${b0?.anio ?? ''} · tratamiento contado desde el lunes ${b0 ? fecha(b0.inicio) : '—'} ·
+      ${bs.length} seller${bs.length === 1 ? '' : 's'} con base esta semana</div>
+    ${graficasHtml(bs)}
+    <h2>Contactos de las secuencias en HubSpot <span class="sub">lo trabajado en Amplemarket, ¿tiene su tratamiento en HubSpot?</span></h2>
+    ${validacionHtml(t)}
+    <h2>Por segmento</h2>
+    ${segmentosHtml()}
+    <h2>Por seller <span class="sub">clic en un seller para ver sus contactos</span></h2>
+    ${sellersHtml()}
+    <h2>Empresas de la semana</h2>
+    ${bs.length ? resumenHtml(bs) : '<p class="muted">Ningún seller de este filtro tiene base esta semana.</p>'}`;
+  const v = $('#vista');
+  v.querySelectorAll('[data-ir]').forEach(x => x.onclick = () => {
+    const ir = x.dataset.ir;
+    if (!ir) return;
+    Object.assign(F, {vista: 'contactos', nivel: NIVELES.includes(ir) ? ir : '', brechas: ir === 'brechas', trabajados: ir === 'trabajados'});
+    pintar();
+  });
+  v.querySelectorAll('[data-kpi]').forEach(x => x.onclick = () => desglose(x.dataset.kpi));
+  pintarAvance(bs);
+  v.querySelectorAll('[data-seg]').forEach(x => x.onclick = () => { F.segmento = x.dataset.seg; F.lider = ''; F.rep = ''; pintar(); });
+  v.querySelectorAll('[data-seller]').forEach(x => x.onclick = () => {
+    Object.assign(F, {rep: x.dataset.seller, vista: 'contactos', nivel: '', brechas: false, trabajados: false}); pintar();
+  });
+}
+
+function segmentosHtml() {
+  const todos = equipo().filter(s => !F.lider || s.lider === F.lider);
+  const semana = basesDeLaSemana();
+  const claves = [...Object.keys(segmentos()), ...(todos.some(s => s.segmento === 'sin_segmento') ? ['sin_segmento'] : [])];
+  return `<div class="segcards">${claves.map(k => {
+    const ss = todos.filter(s => (s.segmento || 'sin_segmento') === k);
+    const emails = new Set(ss.map(s => s.email));
+    const t = sumarContactos(semana.filter(b => emails.has((b.rep_email || '').toLowerCase())));
+    const conActiva = ss.filter(s => secuenciasDe(s.email).some(q => q.estado === 'active')).length;
+    const lideres = [...new Set(ss.map(s => s.lider).filter(Boolean))].join(', ');
+    return `<button class="segcard ${F.segmento === k ? 'on' : ''}" data-seg="${k}">
+      <div class="nombre">${esc(segNombre(k))}</div>
+      <div class="dom">${ss.length} seller${ss.length === 1 ? '' : 's'}${lideres ? ' · ' + esc(lideres) : ''}</div>
+      ${ss.length ? `<div class="segnums">
+        <span><b>${conActiva}/${ss.length}</b> con secuencia activa</span>
+        <span><b>${t.trabajados}</b> contactos trabajados</span>
+        <span><b>${pct(t.con_actividad, t.trabajados)}</b> con actividad en HubSpot</span>
+        <span><b>${t.por_nivel.lead || 0}</b> lead · <b>${t.por_nivel.deal || 0}</b> deal</span>
+        <span class="${t.con_brechas ? 'tarde' : ''}"><b>${t.con_brechas}</b> con brechas</span>
+      </div>${t.total ? barraNiveles(t) : ''}` : '<div class="muted small" style="margin-top:8px">Sin sellers asignados</div>'}
+    </button>`;
+  }).join('')}</div>
+  <div class="leyenda">${NIVELES.map(s => `<span class="estado" style="--c:var(--n-${s})">${NIVEL_TXT[s]}</span>`).join('')}</div>`;
+}
+
+function sellersHtml() {
+  const semana = basesDeLaSemana();
+  const ss = sellersFiltrados();
+  let grupo = null;
+  const filas = ss.map(s => {
+    // Su base de la semana elegida; si no tiene, la más reciente (D.bases viene de la más nueva a la más vieja)
+    const suya = x => (x.rep_email || '').toLowerCase() === s.email;
+    const b = semana.find(suya) || D.bases.find(suya);
+    const otraSemana = b && b.semana_clave !== F.semana ? ` <span class="tag" style="margin-left:0" title="Datos de su base más reciente: no tiene base en la semana elegida">S${b.semana}</span>` : '';
+    const c = b?.resumen?.contactos_hs, r = b?.resumen;
+    const secs = secuenciasDe(s.email);
+    const activas = secs.filter(q => q.estado === 'active'), borr = secs.filter(q => q.estado === 'draft').length;
+    const secTxt = (activas.length ? activas.map(q => `<div class="sec-activa" title="Secuencia activa en Amplemarket"><span class="dot" style="background:var(--primary)"></span>${esc(q.nombre)}</div>`).join('')
+      : secs.length ? `0 activas${borr ? ` · <span class="tarde">${borr} borrador</span>` : ''}`
+      : '<span class="tag warn">Sin secuencia</span>') + otraSemana;
+    const cab = s.segmento !== grupo ? (grupo = s.segmento, `<tr class="grupo"><td colspan="13">${esc(segNombre(s.segmento))}</td></tr>`) : '';
+    const n = v => c ? v : '—';
+    return cab + `<tr class="fila" data-seller="${esc(s.email)}">
+      <td><div class="nombre">${esc(s.nombre)}</div><div class="dom">${esc([s.equipo, s.region].filter(Boolean).join(' · ') || segNombre(s.segmento))}</div></td>
+      <td>${esc(s.lider || '—')}</td>
+      <td>${secTxt}</td>
+      <td class="num">${c ? c.total : '—'}</td>
+      <td class="num">${n(c?.trabajados)}</td>
+      <td class="num">${n(c?.trabajados_en_hs)}</td>
+      <td class="num">${n(c?.con_actividad)}</td>
+      <td>${c?.total ? barraNiveles(c) : '<span class="muted">—</span>'}</td>
+      <td class="num">${c ? c.por_nivel.lead || 0 : '—'}</td>
+      <td class="num">${c ? c.por_nivel.deal || 0 : '—'}</td>
+      <td class="num">${c ? (c.con_brechas ? `<span class="alerta">${c.con_brechas}</span>` : 0) : '—'}</td>
+      <td class="num">${r ? `${r.contactadas}/${r.empresas}` : '—'}</td>
+      <td class="num">${r ? r.reuniones : '—'}</td>
+    </tr>`;
+  }).join('');
+  return `<div class="scroll"><table class="tabla"><thead><tr>
+    <th>Seller</th><th>Líder</th><th>Secuencias</th><th class="num">Contactos</th><th class="num">Trabajados AM</th>
+    <th class="num" title="De los trabajados en Amplemarket">En HubSpot</th><th class="num" title="De los trabajados: con correo, llamada o mensaje registrado en HubSpot desde el inicio">Con actividad HS</th>
+    <th>Etapa en HubSpot</th><th class="num">Lead</th><th class="num">Deal</th><th class="num">Brechas</th>
+    <th class="num">Empresas contactadas</th><th class="num">Reuniones</th>
+    </tr></thead><tbody>${filas || '<tr><td colspan="13" class="muted">Sin sellers para este filtro.</td></tr>'}</tbody></table></div>`;
+}
+
+// ── Secuencias creadas por cada seller ─────────────────────────────────────────
+// Progreso por etapa (tareas de Amplemarket · amplemarket.py · progreso_por_etapa)
+const TIPO_ETAPA = {
+  email: ['mail', 'Correo'], linkedin_visit: ['visibility', 'LinkedIn · Visita al perfil'],
+  linkedin_follow: ['person_add', 'LinkedIn · Seguir'], linkedin_like_last_post: ['thumb_up', 'LinkedIn · Like a la última publicación'],
+  linkedin_connect: ['group_add', 'LinkedIn · Conexión'], linkedin_message: ['chat', 'LinkedIn · Mensaje'],
+  linkedin_voice_message: ['mic', 'LinkedIn · Mensaje de voz'], linkedin_video_message: ['videocam', 'LinkedIn · Video'],
+  phone_call: ['call', 'Llamada'], custom_task: ['task_alt', 'Tarea'], whatsapp: ['forum', 'WhatsApp'], sms: ['sms', 'SMS'],
+};
+const COL_ETAPA = [['programadas', 'Programadas', 'event_upcoming'], ['completadas', 'Completadas', 'check'],
+                   ['saltadas', 'Saltadas', 'fast_forward'], ['canceladas', 'Canceladas', 'delete'], ['pausadas', 'Pausadas', 'pause']];
+const SEC_ABIERTAS = new Set(), SEC_USUARIO = {};
+const tipoEtapa = t => TIPO_ETAPA[t] || ['radio_button_unchecked', t];
+
+function etapasHtml(s) {
+  if (!s.etapas) return `<p class="muted small" style="margin:0">Todavía no hay progreso por etapa de esta secuencia: aparece con la próxima sincronización.</p>`;
+  const nombres = Object.fromEntries(equipo().map(x => [x.email, x.nombre]));
+  const usuarios = [...new Set(s.etapas.flatMap(e => Object.keys(e.por_usuario || {})))].sort();
+  const u = usuarios.includes(SEC_USUARIO[s.id]) ? SEC_USUARIO[s.id] : '';
+  const cols = COL_ETAPA.filter(([k]) => k !== 'pausadas' || s.etapas.some(e => e.pausadas));
+  const repetido = t => s.etapas.filter(e => e.tipo === t).length > 1;
+  const filas = s.etapas.map((e, i) => {
+    const v = u ? (e.por_usuario[u] || {}) : e, [ico, txt] = tipoEtapa(e.tipo);
+    return `<tr><td class="num muted" style="text-align:left">${i + 1}</td>
+      <td><span class="etapa-tipo"><span class="ms">${ico}</span>${esc(txt)}${repetido(e.tipo) ? ` <span class="muted">· ${e.n}.ª</span>` : ''}
+        <span class="tag" style="margin-left:4px">${e.automatica ? 'automática' : 'manual'}</span></span></td>
+      ${cols.map(([k]) => `<td class="num ${v[k] ? '' : 'muted'}">${nf.format(v[k] || 0)}</td>`).join('')}</tr>`;
+  }).join('');
+  const pasos = (s.pasos_leads || []).map(p =>
+    `<span class="tag" style="margin-left:0">${nf.format(p.leads)} en paso ${esc(p.paso)} · ${esc(tipoEtapa(p.tipo)[1])}</span>`).join(' ');
+  return `
+    ${usuarios.length > 1 ? `<div class="chips" style="margin-bottom:12px">
+      ${[['', 'Todos los sellers'], ...usuarios.map(x => [x, nombres[x] || x])].map(([k, l]) =>
+        `<button class="chip ${u === k ? 'on' : ''}" data-sec-usuario="${esc(k)}" data-sec="${esc(s.id)}">${u === k ? '<span class="ms">check</span>' : ''}${esc(l)}</button>`).join('')}</div>` : ''}
+    ${s.etapas.length ? `<div class="etapas-caja"><table class="tabla sec-etapas"><thead><tr><th>#</th><th>Etapa</th>${cols.map(([, l, i]) =>
+      `<th class="num"><span class="ms" style="font-size:16px;vertical-align:-3px">${i}</span> ${l}</th>`).join('')}</tr></thead><tbody>${filas}</tbody></table></div>`
+      : '<p class="muted small" style="margin:0">Amplemarket todavía no ha creado tareas en esta secuencia.</p>'}
+    ${pasos ? `<div class="small muted" style="margin-top:12px">Leads en curso hoy${u ? ' (todos los sellers)' : ''}: ${pasos}</div>` : ''}
+    <div class="small muted" style="margin-top:8px">Tareas de Amplemarket de todos los usuarios de la secuencia, en el orden en que se crean.
+      Los correos automáticos no son tareas: se ven en «Leads en curso hoy» mientras están programados.</div>`;
+}
+
+function vistaSecuencias() {
+  const ss = sellersFiltrados();
+  const sinFiltro = !F.segmento && !F.lider && !F.rep;
+  const compartidas = sinFiltro ? (D.secuencias || []).filter(s => !s.rep && !(s.reps || []).length) : [];
+  const fila = s => `<tr class="fila ${SEC_ABIERTAS.has(s.id) ? 'sel' : ''}" data-sec-fila="${esc(s.id)}" title="Ver el progreso por etapa">
+      <td><span class="ms sec-flecha">${SEC_ABIERTAS.has(s.id) ? 'expand_more' : 'chevron_right'}</span><a href="${esc(s.url)}" target="_blank" class="nombre" style="color:inherit">${esc(s.nombre)} ↗</a>
+        <div class="dom">${s.creador ? 'creada por ' + esc(s.creador) : ''}${s.compartida ? ' · compartida, los leads se reparten por owner' : ''}</div></td>
+      <td><span class="tag ${s.estado === 'active' ? 'ok' : s.estado === 'draft' ? 'warn' : ''}" style="margin-left:0">${esc(ESTADO_SEC[s.estado] || s.estado)}</span></td>
+      <td class="num">${fecha(s.creada)}</td>
+      <td class="num">${s.semana_clave ? 'S' + s.semana_clave.split('-S')[1] : '—'}</td>
+      <td class="num">${s.leads ?? '—'}</td>
+      <td class="num">${s.leads ? s.contactados : '—'}</td>
+      <td class="num">${s.leads ? s.respondieron : '—'}</td>
+      <td>${{auto: '<span class="tag">automático</span>', manual: '<span class="tag">configurada</span>', no: '<span class="muted">no se sigue</span>'}[s.seguimiento] || ''}</td>
+    </tr>${SEC_ABIERTAS.has(s.id) ? `<tr class="sec-detalle"><td colspan="8">${etapasHtml(s)}</td></tr>` : ''}`;
+  let grupo = null;
+  const filas = ss.map(s => {
+    const secs = secuenciasDe(s.email);
+    const cab = s.segmento !== grupo ? (grupo = s.segmento, `<tr class="grupo"><td colspan="8">${esc(segNombre(s.segmento))}</td></tr>`) : '';
+    return cab + `<tr class="sub-grupo"><td colspan="8"><b>${esc(s.nombre)}</b> <span class="muted">· ${esc(s.lider || '')} ·
+      ${secs.length} secuencia${secs.length === 1 ? '' : 's'}</span>${secs.length ? '' : ' <span class="tag warn">Sin secuencia</span>'}</td></tr>`
+      + secs.map(fila).join('');
+  }).join('');
+  const total = ss.reduce((n, s) => n + secuenciasDe(s.email).length, 0);
+  const activas = ss.filter(s => secuenciasDe(s.email).some(q => q.estado === 'active')).length;
+  $('#vista').innerHTML = `
+    <h2>Secuencias de los sellers <span class="sub">${total} secuencias · ${activas} de ${ss.length} sellers con al menos una activa ·
+      se excluyen los borradores de ejemplo de Amplemarket</span></h2>
+    <div class="scroll"><table class="tabla"><thead><tr><th>Secuencia</th><th>Estado</th><th class="num">Creada</th><th class="num">Semana</th>
+      <th class="num">Leads</th><th class="num">Contactados</th><th class="num">Respondieron</th><th>Seguimiento</th></tr></thead>
+      <tbody>${filas}${compartidas.length ? `<tr class="grupo"><td colspan="8">Compartidas (los leads se reparten por owner)</td></tr>${compartidas.map(fila).join('')}` : ''}</tbody></table></div>`;
+  const v = $('#vista'), scroll = () => v.querySelector('.scroll'), repintar = () => { const y = scroll().scrollTop; vistaSecuencias(); scroll().scrollTop = y; };
+  v.querySelectorAll('[data-sec-fila]').forEach(tr => tr.onclick = ev => {
+    if (ev.target.closest('a')) return;
+    const id = tr.dataset.secFila;
+    SEC_ABIERTAS.has(id) ? SEC_ABIERTAS.delete(id) : SEC_ABIERTAS.add(id);
+    repintar();
+  });
+  v.querySelectorAll('[data-sec-usuario]').forEach(b => b.onclick = () => { SEC_USUARIO[b.dataset.sec] = b.dataset.secUsuario; repintar(); });
+}
+
+// ── Contactos: validación uno a uno ────────────────────────────────────────────
+function filasContactos() {
+  const q = F.q.trim().toLowerCase(), filas = [];
+  for (const b of basesSemana()) for (const e of b.empresas) for (const l of e.leads) {
+    const t = l.hs_trat;
+    if (!t) continue;
+    if (F.nivel && t.nivel !== F.nivel) continue;
+    if (F.brechas && !t.brechas.length) continue;
+    if (F.trabajados && !t.trabajado) continue;
+    if (q && !`${l.nombre} ${l.email} ${e.nombre} ${e.dominio}`.toLowerCase().includes(q)) continue;
+    filas.push({b, e, l, t});
+  }
+  return filas.sort((x, y) => (y.t.brechas.length - x.t.brechas.length) || (y.t.trabajado - x.t.trabajado)
+    || (NIVELES.indexOf(y.t.nivel) - NIVELES.indexOf(x.t.nivel)));
+}
+
+function cadenaHtml(t) {
+  if (t.nivel === 'no_en_hubspot') return '<span class="tag err">No está en HubSpot</span>';
+  const i = NIVELES.indexOf(t.nivel);
+  return `<span class="cadena">${NIVELES.slice(1).map((n, j) =>
+    `<span class="paso ${j + 1 <= i ? 'ok' : ''}" style="--c:var(--n-${n})">${NIVEL_TXT[n]}</span>`).join('')}</span>`;
+}
+
+function vistaContactos() {
+  $('#vista').innerHTML = `
+    <h2>Contactos de las secuencias <span class="sub" id="conteo"></span></h2>
+    <p class="muted small" style="margin:-4px 0 0">Cada contacto trabajado desde Amplemarket debería existir en HubSpot, tener la actividad registrada
+      desde el inicio de la base y avanzar de Prospecto a Lead (etapa o objeto Lead) y a Deal cuando responde.</p>
+    <div class="filtros">
+      <select id="f-nivel"><option value="">Todas las etapas en HubSpot</option>${NIVELES.map(n =>
+        `<option value="${n}" ${F.nivel === n ? 'selected' : ''}>${NIVEL_TXT[n]}</option>`).join('')}</select>
+      <input type="search" id="f-q" placeholder="Buscar contacto, correo o empresa" value="${esc(F.q)}">
+      <label class="tog"><input type="checkbox" id="f-trab" ${F.trabajados ? 'checked' : ''}> Solo trabajados en Amplemarket</label>
+      <label class="tog"><input type="checkbox" id="f-brechas" ${F.brechas ? 'checked' : ''}> Solo con brechas</label>
+    </div>
+    <div id="contactos"></div>`;
+  $('#f-nivel').onchange = e => { F.nivel = e.target.value; pintarContactos(); };
+  $('#f-q').oninput = e => { F.q = e.target.value; pintarContactos(); };
+  $('#f-trab').onchange = e => { F.trabajados = e.target.checked; pintarContactos(); };
+  $('#f-brechas').onchange = e => { F.brechas = e.target.checked; pintarContactos(); };
+  pintarContactos();
+}
+
+const MAX_FILAS = 500;
+function pintarContactos() {
+  const filas = filasContactos();
+  $('#conteo').textContent = `${filas.length} contacto${filas.length === 1 ? '' : 's'}${filas.length > MAX_FILAS ? ` · se muestran ${MAX_FILAS}` : ''}`;
+  const vis = filas.slice(0, MAX_FILAS);
+  $('#contactos').innerHTML = `<div class="scroll"><table class="tabla"><thead><tr>
+      <th>Contacto</th><th>Empresa</th><th>Seller</th><th>Amplemarket</th><th>Tratamiento en HubSpot</th>
+      <th class="num">Actividad HS</th><th>Owner HS</th><th>Validación</th></tr></thead><tbody>${vis.map(({b, e, l, t}, i) => {
+      const am = l.am;
+      const amTxt = am ? `<b>${esc(ESTADO_AM[am.estado] || am.estado)}</b>${am.primer_contacto ? `<div class="dom">contactado ${fecha(am.primer_contacto)}</div>` : ''}
+        ${am.respondio ? '<span class="tag info">respondió</span>' : ''}` : '<span class="muted">—</span>';
+      const extra = [...t.leads.map(x => `Lead: ${x.etapa}`), ...t.deals.map(d => `Deal: ${d.nombre} · ${d.etapa}${d.nuevo ? ' (nuevo)' : ''}`)];
+      const valid = t.brechas.length ? t.brechas.map(x => `<span class="tag ${x.tipo === 'no_en_hubspot' ? 'err' : 'warn'}" title="${esc(x.texto)}">${BRECHAS[x.tipo] || x.tipo}</span>`).join(' ')
+        : t.trabajado ? '<span class="tag ok"><span class="ms" style="font-size:14px">check</span>OK</span>' : '<span class="muted">Aún sin trabajar</span>';
+      return `<tr class="fila" data-i="${i}">
+        <td><div class="nombre">${esc(l.nombre || l.email || '—')}</div><div class="dom">${esc(l.email || 'sin email')}</div></td>
+        <td>${esc(e.hubspot?.nombre || e.nombre)}</td>
+        <td>${esc(b.rep_nombre)}</td>
+        <td>${amTxt}</td>
+        <td>${cadenaHtml(t)}${extra.length ? `<div class="dom" style="margin-top:4px">${esc(extra.join(' · '))}</div>` : ''}</td>
+        <td class="num">${t.nivel === 'no_en_hubspot' ? '—' : `${t.salientes}${t.ultima ? `<div class="dom">${fecha(t.ultima)}</div>` : ''}`}</td>
+        <td>${esc(l.hs_owner || '—')}${t.owner_ok === false ? ' <span class="tag warn">otro owner</span>' : ''}</td>
+        <td>${valid}</td>
+      </tr>`;
+    }).join('') || '<tr><td colspan="8" class="muted">Sin contactos para este filtro.</td></tr>'}</tbody></table></div>`;
+  $('#contactos').querySelectorAll('tr[data-i]').forEach(tr => tr.onclick = () => abrir(vis[+tr.dataset.i]));
+}
+
+// ── Empresas (vista anterior) ──────────────────────────────────────────────────
+function vistaEmpresas() {
+  $('#vista').innerHTML = `
+    <h2>Empresas <span class="sub" id="conteo"></span></h2>
+    <div class="filtros">
+      <select id="f-estado"><option value="">Todos los estados</option>${ORDEN.map(s =>
+        `<option value="${s}" ${F.estado === s ? 'selected' : ''}>${ESTADOS[s]}</option>`).join('')}</select>
+      <input type="search" id="f-q" placeholder="Buscar empresa, dominio o contacto" value="${esc(F.q)}">
+      <label class="tog"><input type="checkbox" id="f-alertas" ${F.alertas ? 'checked' : ''}> Solo con alertas</label>
+    </div>
+    <div class="leyenda">${ORDEN.map(s => estadoHtml(s)).join('')}</div>
+    <div id="empresas" style="margin-top:12px"></div>`;
+  $('#f-estado').onchange = e => { F.estado = e.target.value; pintarEmpresas(); };
+  $('#f-q').oninput = e => { F.q = e.target.value; pintarEmpresas(); };
+  $('#f-alertas').onchange = e => { F.alertas = e.target.checked; pintarEmpresas(); };
+  pintarEmpresas();
+}
+
+function filasEmpresas() {
+  const q = F.q.trim().toLowerCase();
+  const filas = [];
+  for (const b of basesSemana()) {
+    for (const e of b.empresas) {
+      if (F.estado && e.estado !== F.estado) continue;
+      if (F.alertas && !e.alertas.length) continue;
+      if (q && !(`${e.nombre} ${e.dominio} ${e.leads.map(l => l.email + ' ' + l.nombre).join(' ')}`.toLowerCase().includes(q))) continue;
+      filas.push({b, e});
+    }
+  }
+  const val = {
+    empresa: r => (r.e.nombre || '').toLowerCase(),
+    rep: r => r.b.rep_nombre || '',
+    estado: r => ORDEN.indexOf(r.e.estado),
+    toques: r => r.e.actividades.length,
+    primer: r => r.e.hitos.contactada || 'z',
+    ultimo: r => r.e.dias_sin_toque,
+    alertas: r => r.e.alertas.length,
+  }[F.orden];
+  return filas.sort((x, y) => (val(x) > val(y) ? 1 : val(x) < val(y) ? -1 : 0) * F.dir);
+}
+
+function sumar(bs) {
+  const t = {empresas:0, contactos:0, en_hubspot:0, contactadas:0, respondieron:0, reuniones:0, deals:0, con_alertas:0, actividades:0, del_rep:0, por_estado:{}};
+  for (const b of bs) for (const [k, v] of Object.entries(b.resumen)) {
+    if (k === 'por_estado') for (const [s, n] of Object.entries(v)) t.por_estado[s] = (t.por_estado[s] || 0) + n;
+    else if (typeof v === 'number') t[k] = (t[k] || 0) + v;
+  }
+  return t;
+}
+
+function resumenHtml(bs) {
+  const t = sumar(bs);
+  const claves = {'Empresas asignadas': 'total', 'En HubSpot': 'en_hubspot', 'Contactadas': 'contactadas', 'Respondieron': 'respondieron',
+                  'Con reunión': 'reunion', 'Con deal nuevo': 'deal', 'Con alertas': 'alertas'};
+  const k = (v, l, p, color) => `<div class="kpi clic" data-kpi="${claves[l]}" title="Ver la etapa en HubSpot por secuencia y rep"><div class="v">${v}</div>
+    <div class="l">${color ? `<span class="dot" style="background:var(--e-${color})"></span>` : ''}${l}</div>
+    ${p ? `<div class="p">${p}</div>` : ''}</div>`;
+  return `<div class="kpis">
+      ${k(t.empresas, 'Empresas asignadas', `${bs.length} × ~${Math.round(t.empresas / (bs.length || 1))}`)}
+      ${k(t.en_hubspot, 'En HubSpot', pct(t.en_hubspot, t.empresas), 'no_en_hubspot')}
+      ${k(t.contactadas, 'Contactadas', pct(t.contactadas, t.empresas) + ' cobertura', 'contactada')}
+      ${k(t.respondieron, 'Respondieron', pct(t.respondieron, t.contactadas) + ' de contactadas', 'respondio')}
+      ${k(t.reuniones, 'Con reunión', pct(t.reuniones, t.empresas), 'reunion')}
+      ${k(t.deals, 'Con deal nuevo', pct(t.deals, t.empresas), 'deal')}
+      ${k(t.con_alertas, 'Con alertas', pct(t.con_alertas, t.empresas))}
+    </div>`;
+}
+
+function pintarEmpresas() {
+  const filas = filasEmpresas();
+  $('#conteo').textContent = `${filas.length} empresa${filas.length === 1 ? '' : 's'}`;
+  const th = (k, l, cls = '') => `<th class="${cls}" data-orden="${k}">${l}${F.orden === k ? (F.dir > 0 ? ' ↑' : ' ↓') : ''}</th>`;
+  $('#empresas').innerHTML = `<div class="scroll"><table class="tabla"><thead><tr>
+      ${th('empresa', 'Empresa')}${th('rep', 'Rep')}${th('estado', 'Estado')}
+      <th>Amplemarket</th><th class="num">Contactos HS</th>${th('toques', 'Toques HS', 'num')}
+      ${th('primer', 'Primer toque', 'num')}${th('ultimo', 'Días sin toque', 'num')}
+      <th>Owner HubSpot</th>${th('alertas', 'Alertas', 'num')}
+    </tr></thead><tbody>${filas.map(({b, e}, i) => {
+      const c = e.conteos;
+      const primer = e.hitos.contactada;
+      const desglose = [c.correos && `${c.correos} correos`, c.llamadas && `${c.llamadas} llamadas`,
+                        c.mensajes && `${c.mensajes} mensajes`, c.reuniones && `${c.reuniones} reuniones`,
+                        c.notas && `${c.notas} notas`].filter(Boolean).join(' · ');
+      return `<tr class="fila" data-i="${i}">
+        <td><div class="nombre">${esc(e.hubspot?.nombre || e.nombre)}</div><div class="dom">${esc(e.dominio || 'sin dominio')}</div></td>
+        <td>${esc(b.rep_nombre)}</td>
+        <td>${estadoHtml(e.estado)}</td>
+        <td>${amResumen(e)}</td>
+        <td class="num">${c.contactos_hs}/${c.contactos_base}</td>
+        <td class="num" title="${esc(desglose)}">${e.actividades.length}</td>
+        <td class="num">${primer ? `${fecha(primer)} <span class="muted">+${dias(b.inicio, primer)}d</span>` : '—'}</td>
+        <td class="num ${e.estado !== 'deal' && e.dias_sin_toque > 5 ? 'tarde' : ''}">${e.dias_sin_toque}</td>
+        <td>${esc(e.hubspot?.owner || '—')}</td>
+        <td class="num">${e.alertas.length ? `<span class="alerta" title="${esc(e.alertas.map(a => a.texto).join('\n'))}">${e.alertas.length}</span>` : ''}</td>
+      </tr>`;
+    }).join('')}</tbody></table></div>`;
+  $('#empresas').querySelectorAll('[data-orden]').forEach(t => t.onclick = () => {
+    F.dir = F.orden === t.dataset.orden ? -F.dir : 1; F.orden = t.dataset.orden; pintarEmpresas();
+  });
+  $('#empresas').querySelectorAll('tr[data-i]').forEach(tr => tr.onclick = () => abrir(filas[+tr.dataset.i]));
+}
+
+const KPIS = {
+  total: ['Empresas asignadas', e => true],
+  en_hubspot: ['En HubSpot', e => e.estado !== 'no_en_hubspot'],
+  contactadas: ['Contactadas', e => ORDEN.indexOf(e.estado) >= ORDEN.indexOf('contactada')],
+  respondieron: ['Respondieron', e => ORDEN.indexOf(e.estado) >= ORDEN.indexOf('respondio')],
+  reunion: ['Con reunión', e => ORDEN.indexOf(e.estado) >= ORDEN.indexOf('reunion')],
+  deal: ['Con deal nuevo', e => e.estado === 'deal'],
+  alertas: ['Con alertas', e => e.alertas.length > 0],
+};
+
+// Etapa del ciclo de vida en HubSpot: la de la empresa; si no tiene, la más avanzada de sus contactos
+function etapaHs(e) {
+  const nombres = D.etiquetas?.etapa || {};
+  const orden = Object.keys(nombres);
+  if (e.hubspot?.etapa) return {valor: e.hubspot.etapa, etiqueta: nombres[e.hubspot.etapa] || e.hubspot.etapa, origen: 'empresa'};
+  const deContactos = e.leads.map(l => l.hs_etapa).filter(Boolean).sort((a, b) => orden.indexOf(b) - orden.indexOf(a));
+  if (deContactos.length) return {valor: deContactos[0], etiqueta: nombres[deContactos[0]] || deContactos[0], origen: 'contacto'};
+  return {valor: e.hubspot || e.leads.some(l => l.hs_id) ? '_sin_etapa' : '_no_hs',
+          etiqueta: e.hubspot || e.leads.some(l => l.hs_id) ? 'Sin etapa' : 'No está en HubSpot', origen: null};
+}
+const leadStatusHs = e => {
+  const v = e.hubspot?.lead_status || e.leads.map(l => l.hs_lead_status).find(Boolean);
+  return v ? (D.etiquetas?.lead_status?.[v] || v) : null;
+};
+
+function desglose(kpi) {
+  const [titulo, filtro] = KPIS[kpi];
+  const orden = [...Object.keys(D.etiquetas?.etapa || {}), '_sin_etapa', '_no_hs'];
+  // secuencia → rep → empresas (una empresa puede estar en dos secuencias si sus contactos lo están)
+  const mapa = new Map();
+  let total = 0;
+  for (const b of basesSemana()) for (const e of b.empresas) {
+    if (!filtro(e)) continue;
+    total++;
+    const secs = [...new Set(e.leads.map(l => l.am?.secuencia).filter(Boolean))];
+    for (const s of (secs.length ? secs : [b.lista_nombre])) {
+      if (!mapa.has(s)) mapa.set(s, new Map());
+      const reps = mapa.get(s);
+      if (!reps.has(b.rep_nombre)) reps.set(b.rep_nombre, []);
+      reps.get(b.rep_nombre).push({b, e, etapa: etapaHs(e)});
+    }
+  }
+  const chips = filas => {
+    const n = {};
+    filas.forEach(f => n[f.etapa.valor] = (n[f.etapa.valor] || 0) + 1);
+    return Object.keys(n).sort((a, b) => orden.indexOf(a) - orden.indexOf(b))
+      .map(v => `<span class="etapa">${esc(filas.find(f => f.etapa.valor === v).etapa.etiqueta)}<b>${n[v]}</b></span>`).join('');
+  };
+  const secciones = [...mapa.entries()].map(([sec, reps]) => {
+    const todas = [...reps.values()].flat();
+    return `<div class="seccion"><h5>${esc(sec)}</h5>
+      <div class="dom">${todas.length} empresas</div><div class="etapas" style="margin:8px 0">${chips(todas)}</div>
+      ${[...reps.entries()].map(([rep, filas]) => `<details class="rep"><summary>
+          <span>${esc(rep)}</span><span class="num">${filas.length}</span><span class="etapas">${chips(filas)}</span></summary>
+        <table class="tabla" style="margin-bottom:10px"><thead><tr><th>Empresa</th><th>Etapa HubSpot</th><th>Lead status</th>
+          <th>Tratamiento</th><th>Amplemarket</th><th>Owner HS</th></tr></thead><tbody>
+        ${filas.sort((x, y) => orden.indexOf(x.etapa.valor) - orden.indexOf(y.etapa.valor)).map((f, i) => `
+          <tr class="fila" data-sec="${esc(sec)}" data-rep="${esc(rep)}" data-i="${i}">
+            <td><div class="nombre">${esc(f.e.hubspot?.nombre || f.e.nombre)}</div><div class="dom">${esc(f.e.dominio || '')}</div></td>
+            <td>${esc(f.etapa.etiqueta)}${f.etapa.origen === 'contacto' ? ' <span class="tag">por contacto</span>' : ''}</td>
+            <td>${esc(leadStatusHs(f.e) || '—')}</td>
+            <td>${estadoHtml(f.e.estado)}</td>
+            <td>${amResumen(f.e)}</td>
+            <td>${esc(f.e.hubspot?.owner || '—')}</td></tr>`).join('')}
+        </tbody></table></details>`).join('')}
+    </div>`;
+  }).join('');
+  $('#panel').innerHTML = `<div class="velo"></div><aside style="width:min(980px,100vw)">
+    <button class="btn cerrar" id="cerrar"><span class="ms">close</span></button>
+    <div class="sub">Semana ${basesSemana()[0]?.semana} · clic en un rep para ver sus empresas, clic en una empresa para su detalle</div>
+    <h3>${esc(titulo)} · ${total} empresas</h3>
+    <p class="muted small">Etapa del ciclo de vida de la empresa en HubSpot; si la empresa no la tiene, la más avanzada de sus contactos.</p>
+    ${secciones || '<p class="muted">Sin empresas.</p>'}</aside>`;
+  const cerrar = () => $('#panel').innerHTML = '';
+  $('#cerrar').onclick = cerrar; $('.velo').onclick = cerrar;
+  $('#panel').querySelectorAll('tr[data-sec]').forEach(tr => tr.onclick = () => {
+    const filas = mapa.get(tr.dataset.sec).get(tr.dataset.rep)
+      .sort((x, y) => orden.indexOf(x.etapa.valor) - orden.indexOf(y.etapa.valor));
+    abrir(filas[+tr.dataset.i], () => desglose(kpi));
+  });
+}
+
+function amResumen(e) {
+  const a = e.amplemarket;
+  if (!a) return '<span class="muted">—</span>';
+  const partes = [`${a.contactados}/${a.leads} contactados`];
+  if (a.por_iniciar) partes.push(`${a.por_iniciar} por iniciar`);
+  if (a.respondieron) partes.push(`${a.respondieron} respondió`);
+  if (a.aperturas) partes.push(`${a.aperturas} aperturas`);
+  return `<span class="dom">${partes.join(' · ')}</span>${a.rebotados ? `<span class="tag warn">${a.rebotados} rebote${a.rebotados > 1 ? 's' : ''}</span>` : ''}`;
+}
+
+const ESTADO_AM = {in_sequence:'en curso', ready:'por iniciar', draft:'en borrador (sin lanzar)', completed:'terminó', paused:'pausado', removed:'removido',
+  hard_bounced:'rebotó', spam_blocked:'bloqueado (spam)', email_unavailable:'sin email', error:'error', unsubscribed:'se desuscribió'};
+
+async function abrir({b, e}, volver) {
+  const h = e.hubspot;
+  const hitos = [['asignada', 'Asignada', b.inicio, 'no_en_hubspot'], ['contactada', 'Contactada', e.hitos.contactada],
+                 ['respondio', 'Respondió', e.hitos.respondio], ['reunion', 'Reunión', e.hitos.reunion], ['deal', 'Deal', e.hitos.deal]];
+  $('#panel').innerHTML = `<div class="velo"></div><aside>
+    <button class="btn cerrar" id="cerrar"><span class="ms">close</span></button>
+    <div class="sub">${esc(b.rep_nombre)} · Semana ${b.semana}</div>
+    <h3>${esc(h?.nombre || e.nombre)}</h3>
+    <div class="dom">${esc(e.dominio || 'sin dominio')} · ${estadoHtml(e.estado)}</div>
+    <div class="links">
+      ${h && hsUrl('0-2', h.id) ? `<a href="${hsUrl('0-2', h.id)}" target="_blank">Abrir en HubSpot ↗</a>` : ''}
+      ${b.lista_url ? `<a href="${esc(b.lista_url)}" target="_blank">Lista en Amplemarket ↗</a>` : ''}
+      ${[...new Map(e.leads.filter(l => l.am).map(l => [l.am.secuencia_id, l.am.secuencia])).entries()].map(([id, n]) =>
+        `<a href="https://app.amplemarket.com/dashboard/sequences/${esc(id)}" target="_blank">${esc(n)} ↗</a>`).join('')}
+    </div>
+
+    <h4>Recorrido desde la asignación</h4>
+    <div class="hitos">${hitos.map(([k, l, f, col]) => `<div class="hito ${f ? 'ok' : ''}" style="--c:var(--e-${col || k})">
+      <b>${l}</b><span class="f">${f ? fecha(f) + (k !== 'asignada' ? ` · +${dias(b.inicio, f)}d` : '') : 'pendiente'}</span></div>`).join('')}</div>
+
+    ${e.alertas.length ? `<h4>Alertas</h4><ul class="lst">${e.alertas.map(a =>
+      `<li><span class="tag warn">${ALERTAS[a.tipo] || a.tipo}</span> ${esc(a.texto)}</li>`).join('')}</ul>` : ''}
+
+    <h4>HubSpot</h4>
+    ${h ? `<ul class="lst">
+      <li>Owner: <b>${esc(h.owner || 'sin owner')}</b> · Etapa: ${esc(h.etapa || '—')}${h.lead_status ? ' · Lead status: ' + esc(h.lead_status) : ''}</li>
+      <li>Creada en HubSpot: ${fecha(h.creada)} · ${h.contactos_asociados} contactos asociados en total</li>
+      <li>Encontrada por: ${esc({dominio:'dominio exacto', contacto:'empresa asociada al contacto'}[e.coincidencia] || '—')}
+        · dominios buscados: <span class="mono">${esc((e.dominios || []).join(', ') || '—')}</span></li>
+      ${h.otras.length ? `<li>Duplicadas: ${h.otras.map(id => hsUrl('0-2', id) ? `<a href="${hsUrl('0-2', id)}" target="_blank">${id}</a>` : id).join(', ')}</li>` : ''}
+    </ul>` : `<p class="muted">No se encontró en HubSpot por dominio exacto (<span class="mono">${esc((e.dominios || []).join(', ') || 'sin dominio')}</span>) ni por sus contactos.</p>
+      ${e.posibles?.length ? `<p>Posibles coincidencias, no se usan para el seguimiento hasta corregir el dominio en HubSpot o en la lista:</p>
+      <ul class="lst">${e.posibles.map(p => `<li><b>${esc(p.nombre)}</b> <span class="mono">${esc(p.dominio || 'sin dominio')}</span>
+        <span class="tag">${esc(p.como)}</span>${p.owner ? `<span class="tag">${esc(p.owner)}</span>` : ''}
+        ${hsUrl('0-2', p.id) ? ` <a href="${hsUrl('0-2', p.id)}" target="_blank" style="color:var(--primary)">HubSpot ↗</a>` : ''}</li>`).join('')}</ul>` : ''}`}
+
+    <h4>Contactos de la base (${e.leads.length})</h4>
+    <ul class="lst">${e.leads.map(l => `<li>
+      <b>${esc(l.nombre || l.email)}</b>${l.cargo ? ` <span class="muted">· ${esc(l.cargo)}</span>` : ''}<br>
+      <span class="mono">${esc(l.email || 'sin email')}</span>
+      ${l.validacion ? `<span class="tag">${esc(l.validacion)}</span>` : ''}
+      ${l.hs_id ? `<span class="tag">${esc(l.hs_etapa || 'en HS')}</span>${l.hs_owner ? `<span class="tag">${esc(l.hs_owner)}</span>` : ''}
+        ${hsUrl('0-1', l.hs_id) ? ` <a href="${hsUrl('0-1', l.hs_id)}" target="_blank" style="color:var(--primary)">HubSpot ↗</a>` : ''}`
+        : '<span class="tag warn">no está en HubSpot</span>'}
+      ${l.hs_trat ? `<div style="margin-top:6px">${cadenaHtml(l.hs_trat)}
+        <span class="dom"> · ${l.hs_trat.salientes} toques en HubSpot desde el inicio</span>
+        ${l.hs_trat.leads.map(x => `<span class="tag">Lead: ${esc(x.etapa)}</span>`).join('')}
+        ${l.hs_trat.deals.map(d => `<span class="tag">Deal: ${esc(d.nombre)}${d.nuevo ? ' (nuevo)' : ''}</span>`).join('')}
+        ${l.hs_trat.brechas.map(x => `<span class="tag warn">${esc(x.texto)}</span>`).join('')}</div>` : ''}
+      ${l.am ? `<div class="dom" style="margin-top:4px">Amplemarket: <b>${esc(ESTADO_AM[l.am.estado] || l.am.estado)}</b>
+        ${l.am.paso ? ` · paso ${esc(l.am.paso)}` : ''}${l.am.primer_contacto ? ` · primer contacto ${fecha(l.am.primer_contacto)}` : ''}
+        ${l.am.aperturas ? ` · ${l.am.aperturas} aperturas` : ''}${l.am.respondio ? ' · <b>respondió</b>' : ''}
+        ${l.am.llamada_agendada ? ' · agendó llamada' : ''}${l.am.buzon ? ` · desde ${esc(l.am.buzon)}` : ''}
+        ${l.am.motivo ? `<br>${esc(l.am.motivo)}` : ''}</div>` : ''}
+    </li>`).join('')}</ul>
+
+    ${e.deals.length ? `<h4>Deals</h4><ul class="lst">${e.deals.map(d => `<li>
+      <b>${esc(d.nombre)}</b> ${d.nuevo ? '<span class="tag">nuevo</span>' : '<span class="tag">previo</span>'}<br>
+      <span class="muted">${esc(d.pipeline || '')} · ${esc(d.etapa || '')}${d.monto ? ' · ' + Number(d.monto).toLocaleString('es-CO') + ' ' + esc(d.moneda || '') : ''} · creado ${fecha(d.creado)} · ${esc(d.owner || '')}</span>
+      ${hsUrl('0-3', d.id) ? ` <a href="${hsUrl('0-3', d.id)}" target="_blank" style="color:var(--primary)">↗</a>` : ''}
+    </li>`).join('')}</ul>` : ''}
+
+    ${e.previo ? `<h4>Tratamiento antes de la base (${e.previo.total} toques)</h4>
+    <p class="muted small">Del ${fecha(e.previo.primero)} al ${fecha(e.previo.ultimo)} — el último ${e.previo.dias_antes} días antes del inicio ·
+      ${[['correos','correos'],['respuestas','respuestas'],['llamadas','llamadas'],['reuniones','reuniones'],['mensajes','mensajes']]
+        .filter(([k]) => e.previo[k]).map(([k, t]) => e.previo[k] + ' ' + t).join(' · ')} · ${esc(e.previo.owners.join(', ') || 'sin owner')}</p>
+    <ul class="lst">${e.previo.ultimos.map(a => `<li class="act">
+      <span class="ms">${ICONO[a.tipo] || 'circle'}</span>
+      <div><b>${esc(a.titulo || '')}</b>${a.respuesta ? '<span class="tag">respuesta</span>' : ''}${a.owner ? `<span class="tag">${esc(a.owner)}</span>` : ''}
+        <div class="d">${esc(a.detalle || '')}</div></div>
+      <span class="mono muted">${fecha(a.fecha)}</span></li>`).join('')}</ul>` : ''}
+
+    <h4>Actividad en HubSpot desde ${fecha(b.inicio)} (${e.actividades.length})</h4>
+    ${e.actividades.length ? `<ul class="lst">${[...e.actividades].reverse().map(a => `<li class="act">
+      <span class="ms">${ICONO[a.tipo] || 'circle'}</span>
+      <div><b>${esc(a.titulo)}</b>${a.respuesta ? '<span class="tag">respuesta</span>' : ''}${!a.del_rep && a.owner ? `<span class="tag warn">${esc(a.owner)}</span>` : ''}
+        <div class="d">${esc(a.detalle || '')}</div></div>
+      <span class="mono muted">${fechaHora(a.fecha)}</span></li>`).join('')}</ul>`
+      : '<p class="muted">Sin actividad registrada en HubSpot desde la asignación.</p>'}
+
+    <h4>Cambios de estado entre sincronizaciones</h4>
+    <ul class="lst" id="historial"><li class="muted">Cargando…</li></ul>
+  </aside>`;
+  const cerrar = volver || (() => $('#panel').innerHTML = '');
+  $('#cerrar').onclick = cerrar;
+  $('.velo').onclick = cerrar;
+  const hist = ESTATICO
+    ? ((HIST ??= await (await fetch('/historial.json', {cache: 'no-store'})).json())[`${b.lista_id}|${e.clave}`] || [])
+    : await (await fetch(`/api/historial?lista_id=${encodeURIComponent(b.lista_id)}&clave=${encodeURIComponent(e.clave)}`)).json();
+  const ul = $('#historial');
+  if (ul) ul.innerHTML = hist.length ? hist.map(x => `<li>${fechaHora(x.ts)} → ${estadoHtml(x.estado)}</li>`).join('')
+                                     : '<li class="muted">Sin historial todavía.</li>';
+}
+
+function avisosHtml() {
+  if (!D.avisos?.length) return '';
+  return `<h2>Avisos de la última sincronización</h2><ul class="lst">${D.avisos.map(a =>
+    `<li><b>${esc(a.lista)}</b> — ${esc(a.aviso)}</li>`).join('')}</ul>`;
+}
+
+function exportarContactos() {
+  const q = v => `"${String(v ?? '').replace(/"/g, '""')}"`;
+  const cab = ['semana', 'segmento', 'lider', 'seller', 'contacto', 'email', 'empresa', 'secuencia', 'estado_amplemarket',
+               'trabajado_amplemarket', 'primer_contacto', 'respondio', 'en_hubspot', 'etapa_hubspot', 'lead_hubspot', 'deal_hubspot',
+               'toques_hubspot', 'ultimo_toque_hubspot', 'owner_hubspot', 'brechas'];
+  const csv = [cab.join(',')].concat(filasContactos().map(({b, e, l, t}) => [
+    b.semana_clave, segNombre(b.segmento), b.lider, b.rep_nombre, l.nombre, l.email, e.hubspot?.nombre || e.nombre,
+    l.am?.secuencia, l.am ? ESTADO_AM[l.am.estado] || l.am.estado : '', t.trabajado ? 'sí' : 'no', l.am?.primer_contacto,
+    t.respondio ? 'sí' : 'no', t.nivel === 'no_en_hubspot' ? 'no' : 'sí', NIVEL_TXT[t.nivel],
+    t.leads.map(x => x.etapa).join(' | '), t.deals.map(d => `${d.nombre} (${d.etapa})`).join(' | '),
+    t.salientes, t.ultima, l.hs_owner, t.brechas.map(x => x.texto).join(' | '),
+  ].map(q).join(','))).join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob(['﻿' + csv], {type: 'text/csv'}));
+  a.download = `contactos-${F.semana || 'bases'}${F.segmento ? '-' + F.segmento : ''}.csv`;
+  a.click();
+}
+
+function exportar() {
+  if (F.vista === 'contactos' || F.vista === 'resumen') return exportarContactos();
+  const filas = filasEmpresas();
+  const cab = ['semana', 'segmento', 'rep', 'empresa', 'dominio', 'estado', 'contactos_hs', 'contactos_base', 'correos', 'respuestas',
+               'llamadas', 'conectadas', 'mensajes', 'reuniones', 'primer_toque', 'respondio', 'reunion', 'deal',
+               'ultimo_toque', 'dias_sin_toque', 'owner_hubspot', 'hubspot_id', 'alertas'];
+  const q = v => `"${String(v ?? '').replace(/"/g, '""')}"`;
+  const csv = [cab.join(',')].concat(filas.map(({b, e}) => [
+    b.semana_clave, segNombre(b.segmento), b.rep_nombre, e.hubspot?.nombre || e.nombre, e.dominio, ESTADOS[e.estado],
+    e.conteos.contactos_hs, e.conteos.contactos_base, e.conteos.correos, e.conteos.respuestas, e.conteos.llamadas,
+    e.conteos.conectadas, e.conteos.mensajes, e.conteos.reuniones, e.hitos.contactada, e.hitos.respondio,
+    e.hitos.reunion, e.hitos.deal, e.ultimo_toque, e.dias_sin_toque, e.hubspot?.owner, e.hubspot?.id,
+    e.alertas.map(a => a.texto).join(' | '),
+  ].map(q).join(','))).join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob(['﻿' + csv], {type: 'text/csv'}));
+  a.download = `seguimiento-${F.semana || 'bases'}${F.segmento ? '-' + F.segmento : ''}.csv`;
+  a.click();
+}
+
+async function sincronizar() {
+  seguir(await (await fetch('/api/sincronizar', {method: 'POST'})).json());
+}
+
+// Sigue una sincronización (manual o la automática diaria) hasta que termine
+async function seguir(s) {
+  PROGRAMACION = s.programacion ?? PROGRAMACION;
+  $('#sync').disabled = s.corriendo;
+  if (s.corriendo) $('#errores').innerHTML = '';
+  while (s.corriendo) {
+    $('#progreso').textContent = (s.origen === 'automática' ? 'Actualización diaria · ' : '') + (s.mensajes.at(-1) || 'Arrancando…');
+    await new Promise(r => setTimeout(r, 1500));
+    s = await (await fetch('/api/sincronizar')).json();
+  }
+  $('#progreso').textContent = '';
+  $('#sync').disabled = false;
+  if (s.error) $('#errores').innerHTML = `<div class="error"><b>La sincronización ${s.origen === 'automática' ? 'automática ' : ''}falló${
+    s.fin ? ' (' + fechaHora(s.fin) + ')' : ''}:</b> ${esc(s.error)}</div>`;
+  await cargar();
+}
+
+function semanaIso(s) {
+  const d = new Date(s); d.setUTCHours(0, 0, 0, 0);
+  d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
+  const anio = d.getUTCFullYear();
+  return {anio, semana: Math.ceil(((d - Date.UTC(anio, 0, 1)) / 864e5 + 1) / 7)};
+}
+
+async function panelSecuencias() {
+  $('#panel').innerHTML = `<div class="velo"></div><aside><button class="btn cerrar" id="cerrar"><span class="ms">close</span></button>
+    <h3>Secuencias que se siguen</h3><p class="muted">Cargando secuencias de Amplemarket…</p></aside>`;
+  const cerrar = () => $('#panel').innerHTML = '';
+  $('#cerrar').onclick = cerrar; $('.velo').onclick = cerrar;
+  const {reps, secuencias: filas} = await (await fetch('/api/secuencias')).json();
+  let mostrarTodas = false;
+  const pintarLista = () => {
+    const visibles = filas.filter(s => mostrarTodas || s.seguida || s.estado !== 'draft' || Date.now() - new Date(s.creada) < 30 * 864e5);
+    $('#lista-sec').innerHTML = visibles.map(s => {
+      const def = s.seguida ? s : semanaIso(s.creada);
+      return `<li style="display:grid;grid-template-columns:22px 1fr auto;gap:8px;align-items:center">
+        <input type="checkbox" data-id="${s.id}" ${s.seguida ? 'checked' : ''}>
+        <div><b>${esc(s.nombre)}</b><div class="dom">${esc(s.estado)} · ${esc(s.creador || '')} · creada ${fecha(s.creada)}</div>
+          <select data-rep="${s.id}" style="margin-top:6px;max-width:100%">
+            <option value="">Rep: owner de cada lead</option>
+            ${reps.map(r => `<option value="${esc(r.email)}" ${s.rep === r.email ? 'selected' : ''}>Rep: ${esc(r.nombre)}</option>`).join('')}
+          </select></div>
+        <span class="mono">S<input type="number" min="1" max="53" value="${def.semana}" data-sem="${s.id}" style="width:48px">
+          <input type="number" value="${def.anio}" data-anio="${s.id}" style="width:62px"></span></li>`;
+    }).join('');
+  };
+  $('aside').innerHTML = `<button class="btn cerrar" id="cerrar"><span class="ms">close</span></button>
+    <h3>Secuencias que se siguen</h3>
+    <p class="muted small">Marca las secuencias de cada base y su semana. El tratamiento se cuenta desde el lunes de esa semana
+      y cada lead queda con su owner de Amplemarket como rep.</p>
+    <div class="filtros"><input type="search" id="q-sec" placeholder="Buscar secuencia">
+      <label class="tog"><input type="checkbox" id="todas"> Mostrar borradores viejos</label></div>
+    <ul class="lst" id="lista-sec"></ul>
+    <div style="display:flex;gap:8px;margin-top:16px">
+      <button class="btn prim" id="guardar-sec"><span class="ms">save</span>Guardar y sincronizar</button>
+      <span class="progreso" id="msg-sec"></span></div>`;
+  $('#cerrar').onclick = cerrar;
+  $('#todas').onchange = e => { mostrarTodas = e.target.checked; pintarLista(); };
+  $('#q-sec').oninput = e => {
+    const q = e.target.value.toLowerCase();
+    $('#lista-sec').querySelectorAll('li').forEach(li => li.style.display = li.textContent.toLowerCase().includes(q) ? '' : 'none');
+  };
+  pintarLista();
+  $('#guardar-sec').onclick = async () => {
+    // conserva las seguidas que están ocultas por el filtro
+    const config = Object.fromEntries(filas.filter(s => s.seguida).map(s => [s.id, {semana: s.semana, anio: s.anio, rep: s.rep}]));
+    $('#lista-sec').querySelectorAll('input[data-id]').forEach(cb => {
+      const id = cb.dataset.id;
+      if (cb.checked) config[id] = {semana: +$(`[data-sem="${id}"]`).value, anio: +$(`[data-anio="${id}"]`).value,
+                                    rep: $(`select[data-rep="${id}"]`).value};
+      else delete config[id];
+    });
+    const r = await fetch('/api/secuencias', {method: 'POST', headers: {'content-type': 'application/json'}, body: JSON.stringify(config)});
+    if (!r.ok) { $('#msg-sec').textContent = (await r.json()).detail; return; }
+    cerrar();
+    sincronizar();
+  };
+}
+
+$('#btn-secuencias').onclick = panelSecuencias;
+const iconoTema = () => $('#tema .ms').textContent = document.documentElement.dataset.theme === 'light' ? 'dark_mode' : 'light_mode';
+$('#tema').onclick = () => {
+  const claro = document.documentElement.dataset.theme !== 'light';
+  document.documentElement.dataset.theme = claro ? 'light' : 'dark';
+  try { localStorage.setItem('fuo-tema', claro ? 'light' : 'dark'); } catch (e) {}
+  iconoTema();
+};
+iconoTema();
+$('#sync').onclick = sincronizar;
+$('#exportar').onclick = exportar;
+// Recargar: trae el último dato guardado (en Vercel, la última foto publicada) sin sincronizar
+$('#recargar').onclick = async () => {
+  const btn = $('#recargar');
+  btn.disabled = true;
+  HIST = null;
+  try { await cargar(); } finally { btn.disabled = false; }
+};
+document.addEventListener('keydown', e => { if (e.key === 'Escape') $('#panel').innerHTML = ''; });
+let PROGRAMACION = null;
+if (ESTATICO) {
+  $('#sync').remove(); $('#btn-secuencias').remove();
+  cargar();
+} else {
+fetch('/api/sincronizar').then(r => r.json()).then(seguir);
+// la actualización diaria corre en el servidor; si la página queda abierta, se refresca sola
+setInterval(async () => { const s = await (await fetch('/api/sincronizar')).json(); if (s.corriendo && !$('#sync').disabled) seguir(s); }, 60000);
+}
+</script>
+</body>
+</html>
